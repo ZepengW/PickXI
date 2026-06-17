@@ -340,16 +340,17 @@ function DraftView() {
         )}
       </AnimatePresence>
 
-      {/* Main content — full height grid */}
-      <div className="flex-1 grid lg:grid-cols-[minmax(360px,1fr)_minmax(0,1.2fr)] gap-4 p-4 sm:p-6 min-h-0">
+      {/* Main content — full height grid. On mobile, single column with pitch
+          on top and wheel/picker below. On lg+, two columns side by side. */}
+      <div className="flex-1 grid grid-cols-1 lg:grid-cols-[minmax(360px,1fr)_minmax(0,1.2fr)] gap-4 p-4 sm:p-6 min-h-0">
         {/* Left: Pitch + strength bars + bench */}
         <div className="flex flex-col gap-3 min-h-0">
           {/* Strength bars */}
           <StrengthBars strength={strength} t={t} />
 
-          {/* Pitch — takes available space */}
+          {/* Pitch — takes available space, but on mobile limit height */}
           <div className="flex-1 flex items-center justify-center min-h-0">
-            <div className="w-full max-w-[480px]">
+            <div className="w-full max-w-[420px] sm:max-w-[480px]">
               <Pitch
                 formationId={formationId}
                 slots={slots}
@@ -437,7 +438,7 @@ function DraftView() {
                 </p>
                 <button
                   onClick={() => game.cancelPlacement()}
-                  className="mt-4 px-6 py-2 rounded-full border border-ink-700 text-ink-300 text-sm font-medium hover:border-ink-500 hover:text-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+                  className="mt-4 px-6 py-2 rounded-full border border-ink-700 text-ink-300 text-sm font-medium hover:border-ink-500 hover:text-ink-100 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
                 >
                   {lang === 'zh' ? '取消' : 'Cancel'}
                 </button>
@@ -485,7 +486,7 @@ function DraftView() {
                 />
                 <button
                   onClick={() => game.clearSpin()}
-                  className="mt-3 w-full py-2.5 rounded-full border border-ink-700 text-ink-300 text-sm font-medium hover:border-ink-500 hover:text-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+                  className="mt-3 w-full py-2.5 rounded-full border border-ink-700 text-ink-300 text-sm font-medium hover:border-ink-500 hover:text-ink-100 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
                 >
                   {t('reroll')}
                 </button>

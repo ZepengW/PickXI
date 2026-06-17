@@ -47,11 +47,20 @@ body {
   font-size: 16px;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  /* Prevent double-tap zoom delay on touch devices */
+  touch-action: manipulation;
+  /* Remove default tap highlight on mobile */
+  -webkit-tap-highlight-color: transparent;
   transition: background-color 0.2s ease, color 0.2s ease;
 }
 
 #root {
   min-height: 100svh;
+  /* Safe area insets for notched devices */
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
 }
 
 /* Larger base font on larger screens */

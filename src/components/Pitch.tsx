@@ -44,53 +44,45 @@ export default function Pitch({
       }`}
     >
       {/*
-        Pitch markings drawn in screen coordinates (y=0 at top, y=100 at bottom).
-        Formation coords have y=0 at own goal (bottom) and y=100 at attacking goal (top),
-        so slots use top = (100 - fs.y)% to convert to screen coordinates.
-        No flip transform needed — markings and slots use the same screen space.
+        Pitch markings in screen coords (y=0 top, y=100 bottom).
+        Formation coords: y=0 own goal (bottom), y=100 attacking goal (top).
+        Slot screen position: top = (100 - fs.y)%.
+        SVG and slots share the same screen space — no flip needed.
       */}
       <svg
         viewBox="0 0 100 100"
         className="absolute inset-0 w-full h-full"
         preserveAspectRatio="none"
+        aria-hidden="true"
       >
         <g fill="none" stroke="rgba(255,255,255,0.3)" strokeWidth="0.5">
           {/* Outer boundary */}
           <rect x="4" y="4" width="92" height="92" />
-          {/* Halfway line (screen y=50) */}
+          {/* Halfway line */}
           <line x1="4" y1="50" x2="96" y2="50" />
-          {/* Centre circle */}
+          {/* Centre circle + spot */}
           <circle cx="50" cy="50" r="9" />
-          {/* Centre spot */}
           <circle cx="50" cy="50" r="0.8" fill="rgba(255,255,255,0.4)" />
-
-          {/* Attacking goal area (top of screen, y=4-20) */}
+          {/* Attacking (top) penalty area */}
           <rect x="20" y="4" width="60" height="16" />
-          {/* Attacking 6-yard box */}
           <rect x="37" y="4" width="26" height="4" />
-          {/* Attacking penalty arc */}
           <path d="M 38 20 A 9 9 0 0 0 62 20" />
-
-          {/* Own goal area (bottom of screen, y=80-96) */}
+          {/* Own (bottom) penalty area */}
           <rect x="20" y="80" width="60" height="16" />
-          {/* Own 6-yard box */}
           <rect x="37" y="92" width="26" height="4" />
-          {/* Own penalty arc */}
           <path d="M 38 80 A 9 9 0 0 1 62 80" />
         </g>
       </svg>
 
-      {/* Slots — positioned using formation coords converted to screen coords */}
+      {/* Slots */}
       {formation.slots.map((fs, idx) => {
         const slot = slots.find((s) => s.slotId === fs.id);
         const player = slot?.player ?? null;
         const selected = selectedSlotId === fs.id;
         const group = positionGroup(fs.position);
         const color = GROUP_COLOR[group];
-        // Always show the position code (ST, CB, etc.)
         const label = fs.position;
 
-        // Since any player can play any position, always allow placement.
         const fit = placing && pendingPlayer
           ? positionFit(pendingPlayer, fs.position)
           : null;
@@ -98,8 +90,6 @@ export default function Pitch({
         const isSecondary = fit === 'secondary';
         const isOther = fit === 'other';
         const occupied = !!player;
-
-        // When placing, all empty slots are clickable (any position allowed).
         const clickable = placing ? !occupied : interactive;
 
         return (
@@ -111,18 +101,18 @@ export default function Pitch({
             initial={{ opacity: 0, scale: 0.6 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: 0.15 + idx * 0.04, type: 'spring', stiffness: 200 }}
-            className={`absolute -translate-x-1/2 -translate-y-1/2 flex flex-col items-center justify-center rounded-full font-mono font-bold transition-all ${
-              compact ? 'w-10 h-10 text-[10px]' : 'w-14 h-14 sm:w-16 sm:h-16 text-xs'
-            } ${
-              clickable ? 'cursor-pointer hover:scale-110' : 'cursor-default'
-            } ${selected ? 'ring-2 ring-accent ring-offset-2 ring-offset-pitch-700 scale-110 z-10' : ''} ${
-              isPrimary ? 'ring-2 ring-green-400 animate-pulse z-10' : ''
-            } ${isSecondary ? 'ring-2 ring-yellow-400 z-10' : ''} ${
-              isOther ? 'ring-2 ring-orange-400/70 z-10' : ''
-            }`}
+            /*
+             * CRITICAL: framer-motion sets `transform` for scale/opacity,
+             * which OVERRIDES Tailwind's `-translate-x-1/2 -translate-y-1/2`.
+             * Use framer-motion's `x`/`y` props instead so the centering
+             * transform survives. Without this, slots align by their
+             * top-left corner → whole formation appears shifted right-down.
+             */
             style={{
               left: `${fs.x}%`,
               top: `${100 - fs.y}%`,
+              x: '-50%',
+              y: '-50%',
               background: occupied
                 ? `linear-gradient(145deg, ${color}ee, ${color}99)`
                 : isPrimary
@@ -145,7 +135,21 @@ export default function Pitch({
               }`,
               backdropFilter: 'blur(2px)',
             }}
+            className={`absolute flex flex-col items-center justify-center rounded-full font-mono font-bold ${
+              compact ? 'w-10 h-10 text-[10px]' : 'w-14 h-14 sm:w-16 sm:h-16 text-xs'
+            } ${
+              clickable ? 'cursor-pointer hover:scale-110' : 'cursor-default'
+            } ${selected ? 'ring-2 ring-accent ring-offset-2 ring-offset-pitch-700 scale-110 z-10' : ''} ${
+              isPrimary ? 'ring-2 ring-green-400 animate-pulse z-10' : ''
+            } ${isSecondary ? 'ring-2 ring-yellow-400 z-10' : ''} ${
+              isOther ? 'ring-2 ring-orange-400/70 z-10' : ''
+            }`}
             title={player ? `${player.name} (${label})` : label}
+            aria-label={
+              occupied
+                ? `${player!.name} (${label})`
+                : `${label} ${placing ? '— click to place' : ''}`
+            }
           >
             {occupied ? (
               <PlayerToken
@@ -165,7 +169,7 @@ export default function Pitch({
         );
       })}
 
-      {/* Remove hint on selected filled slot */}
+      {/* Remove button for selected filled slot */}
       {interactive && !placing && selectedSlotId && onRemovePlayer && (() => {
         const sel = slots.find((s) => s.slotId === selectedSlotId);
         if (!sel?.player) return null;
@@ -217,7 +221,7 @@ function PlayerToken({
       >
         {lang === 'zh' ? player.nameZh : player.name}
       </span>
-      {/* Always show the position code the player is playing */}
+      {/* Position code the player is playing */}
       <span className={`font-mono font-bold text-white/80 ${compact ? 'text-[7px]' : 'text-[9px] sm:text-[10px]'}`}>
         {positionLabel}
       </span>

@@ -58,7 +58,7 @@ export default function SquadPicker({
       {sorted.length === 0 ? (
         <div className="py-8 text-center text-sm text-ink-400">{t('noPlayers')}</div>
       ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 max-h-[420px] overflow-y-auto overscroll-contain pr-1">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 gap-2.5 max-h-[420px] overflow-y-auto overscroll-contain pr-1">
           <AnimatePresence mode="popLayout">
             {sorted.map((player) => {
               const drafted = draftedIds.has(player.id);

@@ -237,7 +237,7 @@ export default function ResultsView({
           </button>
           <button
             onClick={onChangeSetup}
-            className="px-7 py-3.5 border border-ink-600 text-ink-200 font-medium rounded-full hover:border-ink-400 hover:text-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+            className="px-7 py-3.5 border border-ink-600 text-ink-200 font-medium rounded-full hover:border-ink-400 hover:text-ink-100 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
           >
             {t('changeSetup')}
           </button>

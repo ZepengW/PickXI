@@ -101,7 +101,7 @@ export default function Home() {
                 </Link>
                 <a
                   href="#how"
-                  className="inline-flex items-center gap-2 px-6 py-3.5 text-ink-200 font-medium rounded-full border border-ink-600 hover:border-ink-300 hover:text-white transition-colors text-sm sm:text-base focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-ink-950"
+                  className="inline-flex items-center gap-2 px-6 py-3.5 text-ink-200 font-medium rounded-full border border-ink-600 hover:border-ink-300 hover:text-ink-100 transition-colors text-sm sm:text-base focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-ink-950"
                 >
                   {t('heroCtaAlt')}
                 </a>
@@ -298,7 +298,7 @@ export default function Home() {
                 whileInView={{ opacity: 1, x: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: i * 0.06, duration: 0.4 }}
-                className="flex items-center gap-3 py-4 border-b border-ink-800 text-ink-200 hover:text-white transition-colors"
+                className="flex items-center gap-3 py-4 border-b border-ink-800 text-ink-200 hover:text-ink-100 transition-colors"
               >
                 <span className="text-accent">▸</span>
                 <span className="text-base">{ch}</span>

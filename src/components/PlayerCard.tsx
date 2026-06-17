@@ -60,6 +60,7 @@ export default function PlayerCard({
       disabled={disabled}
       whileHover={!disabled ? { y: -3 } : undefined}
       whileTap={!disabled ? { scale: 0.98 } : undefined}
+      aria-label={`${player.name} ${player.position} ${player.rating}`}
       className={`relative w-full text-left rounded-xl overflow-hidden border transition-colors ${
         selected
           ? 'border-accent ring-2 ring-accent/40'
@@ -71,7 +72,7 @@ export default function PlayerCard({
         {showRatings ? (
           <span className={`font-mono font-black text-xl ${headerText}`}>{player.rating}</span>
         ) : (
-          <span className="font-mono font-black text-xl text-white/70">??</span>
+          <span className="font-mono font-black text-xl text-ink-100/70">??</span>
         )}
         <span className="font-mono text-xs font-bold text-white/80 bg-black/30 px-2 py-1 rounded">
           {POS_SHORT[player.position][lang]}
@@ -80,7 +81,7 @@ export default function PlayerCard({
 
       {/* Body */}
       <div className="bg-ink-800 px-3 py-3">
-        <div className="font-semibold text-base text-white leading-tight truncate">
+        <div className="font-semibold text-base text-ink-100 leading-tight truncate">
           {lang === 'zh' ? player.nameZh : player.name}
         </div>
         <div className="text-xs text-ink-400 truncate mt-1">
