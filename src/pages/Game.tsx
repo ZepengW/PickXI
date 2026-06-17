@@ -12,19 +12,19 @@ import {
   FORMATIONS,
   availableSeasons,
   clubSeasonsFor,
-  getCompetition,
   playersForClubSeason,
 } from '../data';
 import { teamStrength } from '../engine/simulation';
+import type { Player } from '../types';
 
 export default function Game() {
   const game = useGame();
   const { phase } = game;
 
   return (
-    <div className="min-h-screen bg-ink-950 text-ink-100">
+    <div className="min-h-screen bg-ink-950 text-ink-100 flex flex-col">
       <Nav />
-      <div className="pt-16">
+      <div className="pt-14 flex-1 flex flex-col">
         <AnimatePresence mode="wait">
           {phase === 'setup' && <SetupView key="setup" />}
           {phase === 'draft' && <DraftView key="draft" />}
@@ -35,6 +35,7 @@ export default function Game() {
               competitionId={game.competitionId}
               onPlayAgain={() => game.startDraft()}
               onChangeSetup={() => game.backToSetup()}
+              onRestartAll={() => game.restartAll()}
             />
           )}
         </AnimatePresence>
@@ -51,7 +52,6 @@ function SetupView() {
   const { lang, t } = useLang();
   const game = useGame();
   const { competitionId, formationId, seasonFrom, seasonTo, showRatings } = game;
-  const comp = getCompetition(competitionId)!;
   const seasons = availableSeasons(competitionId);
 
   const safeFrom = seasons.includes(seasonFrom) ? seasonFrom : seasons[0] ?? '';
@@ -62,14 +62,19 @@ function SetupView() {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="mx-auto max-w-5xl px-5 sm:px-8 py-10"
+      className="mx-auto max-w-5xl px-5 sm:px-8 py-8 w-full"
     >
-      <h1 className="font-display font-black text-3xl sm:text-5xl tracking-tightest text-white mb-2">
-        {t('setupTitle')}
-      </h1>
-      <p className="text-ink-400 mb-10">
-        {comp ? (lang === 'zh' ? comp.nameZh : comp.name) : ''}
-      </p>
+      <div className="flex items-center justify-between mb-8">
+        <h1 className="font-display font-black text-3xl sm:text-4xl tracking-tightest text-white">
+          {t('setupTitle')}
+        </h1>
+        <button
+          onClick={() => game.restartAll()}
+          className="px-4 py-2 text-xs font-medium border border-ink-700 text-ink-400 rounded-full hover:border-red-500 hover:text-red-400 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+        >
+          {t('restartAll')}
+        </button>
+      </div>
 
       {/* Competition */}
       <Section label={t('compsTitle')}>
@@ -127,9 +132,7 @@ function SetupView() {
             className="bg-ink-900 border border-ink-700 rounded-lg px-4 py-2.5 text-sm text-white font-mono focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:border-accent"
           >
             {seasons.map((s) => (
-              <option key={s} value={s}>
-                {s}
-              </option>
+              <option key={s} value={s}>{s}</option>
             ))}
           </select>
           <span className="text-ink-500 font-mono text-sm" aria-hidden="true">—</span>
@@ -140,9 +143,7 @@ function SetupView() {
             className="bg-ink-900 border border-ink-700 rounded-lg px-4 py-2.5 text-sm text-white font-mono focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:border-accent"
           >
             {seasons.map((s) => (
-              <option key={s} value={s}>
-                {s}
-              </option>
+              <option key={s} value={s}>{s}</option>
             ))}
           </select>
           <span className="text-xs text-ink-400 font-mono">
@@ -177,7 +178,7 @@ function SetupView() {
         </div>
       </Section>
 
-      <div className="mt-10 flex justify-center">
+      <div className="mt-8 flex justify-center">
         <button
           onClick={() => game.startDraft()}
           className="px-10 py-4 bg-accent text-ink-950 font-bold rounded-full hover:bg-accent-dark transition-colors text-base focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-ink-950"
@@ -190,7 +191,7 @@ function SetupView() {
 }
 
 // ---------------------------------------------------------------------------
-// DRAFT
+// DRAFT — full viewport layout
 // ---------------------------------------------------------------------------
 
 function DraftView() {
@@ -206,6 +207,7 @@ function DraftView() {
     draftedIds,
     spin,
     pendingPlayer,
+    bench,
   } = game;
 
   const [simulating, setSimulating] = useState(false);
@@ -241,10 +243,10 @@ function DraftView() {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="mx-auto max-w-7xl px-4 sm:px-6 py-6"
+      className="flex-1 flex flex-col w-full"
     >
-      {/* Top bar: progress + strength + simulate */}
-      <div className="flex items-center justify-between mb-5 flex-wrap gap-3">
+      {/* Top bar */}
+      <div className="flex items-center justify-between px-4 sm:px-6 py-2.5 border-b border-ink-800/60 flex-wrap gap-2">
         <div className="flex items-center gap-4">
           <div className="font-mono text-sm">
             <span className="text-accent font-bold text-lg">{filled}</span>
@@ -257,9 +259,6 @@ function DraftView() {
                 className={`w-2 h-2 rounded-full ${s.player ? 'bg-accent' : 'bg-ink-700'}`}
               />
             ))}
-          </div>
-          <div className="text-xs text-ink-400 font-mono">
-            OVR <span className="text-white font-bold">{Math.round(strength.overall)}</span>
           </div>
           {/* Formation quick-switch */}
           <button
@@ -289,9 +288,9 @@ function DraftView() {
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: 'auto' }}
             exit={{ opacity: 0, height: 0 }}
-            className="overflow-hidden mb-4"
+            className="overflow-hidden border-b border-ink-800/60"
           >
-            <div className="flex flex-wrap gap-2 p-3 rounded-xl border border-ink-800 bg-ink-900/60">
+            <div className="flex flex-wrap gap-2 p-3">
               {FORMATIONS.map((f) => (
                 <button
                   key={f.id}
@@ -309,66 +308,106 @@ function DraftView() {
                 </button>
               ))}
               <p className="w-full text-xs text-ink-500 mt-1">
-                {lang === 'zh' ? '切换阵型会清空已选球员。' : 'Switching formation clears your draft.'}
+                {lang === 'zh'
+                  ? '切换阵型会自动重新分配已选球员，无法放入新阵型的球员将进入替补席。'
+                  : 'Switching formation auto-reassigns drafted players. Those that don\'t fit go to the bench.'}
               </p>
             </div>
           </motion.div>
         )}
       </AnimatePresence>
 
-      <div className="grid lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)] gap-6">
-        {/* Pitch */}
-        <div className="flex flex-col items-center">
-          <Pitch
-            formationId={formationId}
-            slots={slots}
-            pendingPlayer={pendingPlayer}
-            onSelectSlot={(id) => {
-              if (pendingPlayer) {
-                game.placePlayer(id);
-              }
-            }}
-            onRemovePlayer={(id) => game.removePlayer(id)}
-            showRatings={showRatings}
-          />
-          <p className="text-xs text-ink-500 mt-3 text-center max-w-xs">
+      {/* Main content — full height grid */}
+      <div className="flex-1 grid lg:grid-cols-[minmax(360px,1fr)_minmax(0,1.2fr)] gap-4 p-4 sm:p-6 min-h-0">
+        {/* Left: Pitch + strength bars + bench */}
+        <div className="flex flex-col gap-3 min-h-0">
+          {/* Strength bars */}
+          <StrengthBars strength={strength} t={t} />
+
+          {/* Pitch — takes available space */}
+          <div className="flex-1 flex items-center justify-center min-h-0">
+            <div className="w-full max-w-[480px]">
+              <Pitch
+                formationId={formationId}
+                slots={slots}
+                pendingPlayer={pendingPlayer}
+                onSelectSlot={(id) => {
+                  if (pendingPlayer) game.placePlayer(id);
+                }}
+                onRemovePlayer={(id) => game.removePlayer(id)}
+                showRatings={showRatings}
+              />
+            </div>
+          </div>
+
+          <p className="text-xs text-ink-500 text-center">
             {pendingPlayer
               ? lang === 'zh'
-                ? `将 ${pendingPlayer.nameZh} 放到高亮位置。绿色=最佳位置，黄色=可踢但有 -5 惩罚。`
-                : `Place ${pendingPlayer.name} on a highlighted slot. Green = primary, Yellow = secondary (-5).`
+                ? `将 ${pendingPlayer.nameZh} 放到高亮位置。绿色=最佳，黄色=可踢(-5)`
+                : `Place ${pendingPlayer.name} on a highlighted slot. Green=primary, Yellow=secondary(-5)`
               : lang === 'zh'
-                ? '转动转盘选球队 → 选球员 → 放到可踢位置。点击已放球员可移除。'
-                : 'Spin → pick a player → place them on a valid slot. Tap a placed player to remove.'}
+                ? '转盘→选球员→放到可踢位置。点击已放球员可移除。'
+                : 'Spin → pick → place on a valid slot. Tap a placed player to remove.'}
           </p>
+
+          {/* Bench */}
+          {bench.length > 0 && (
+            <Bench
+              bench={bench}
+              showRatings={showRatings}
+              onPlace={(player, slotId) => game.placeBenchPlayer(player, slotId)}
+              slots={slots}
+              lang={lang}
+              t={t}
+            />
+          )}
         </div>
 
-        {/* Right panel: wheel or squad picker */}
-        <div className="rounded-2xl border border-ink-800 bg-ink-900/40 p-5">
+        {/* Right: wheel or squad picker */}
+        <div className="rounded-2xl border border-ink-800 bg-ink-900/40 p-4 sm:p-5 flex flex-col min-h-0">
           <AnimatePresence mode="wait">
-            {/* Placement mode: show pending player card + cancel */}
             {pendingPlayer ? (
               <motion.div
                 key="placing"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                className="text-center"
+                className="flex flex-col items-center justify-center flex-1"
               >
-                <h2 className="font-display font-bold text-lg text-white mb-2">
+                <h2 className="font-display font-bold text-lg text-white mb-3">
                   {lang === 'zh' ? '放置球员' : 'Place Player'}
                 </h2>
-                <div className="inline-flex flex-col items-center gap-2 p-4 rounded-xl border border-accent/40 bg-accent/5">
-                  <div className="text-3xl font-display font-black text-accent">
-                    {pendingPlayer.rating}
-                  </div>
-                  <div className="font-bold text-white">
+                <div className="inline-flex flex-col items-center gap-2 p-5 rounded-xl border border-accent/40 bg-accent/5">
+                  {showRatings && (
+                    <div className="text-4xl font-display font-black text-accent">
+                      {pendingPlayer.rating}
+                    </div>
+                  )}
+                  <div className="font-bold text-white text-lg">
                     {lang === 'zh' ? pendingPlayer.nameZh : pendingPlayer.name}
                   </div>
                   <div className="text-xs text-ink-400 font-mono">
                     {pendingPlayer.position} · {lang === 'zh' ? pendingPlayer.nationalityZh : pendingPlayer.nationality}
                   </div>
+                  {showRatings && (
+                    <div className="grid grid-cols-6 gap-2 mt-2">
+                      {([
+                        ['PAC', pendingPlayer.attr.pace],
+                        ['SHO', pendingPlayer.attr.shooting],
+                        ['PAS', pendingPlayer.attr.passing],
+                        ['DRI', pendingPlayer.attr.dribbling],
+                        ['DEF', pendingPlayer.attr.defending],
+                        ['PHY', pendingPlayer.attr.physical],
+                      ] as const).map(([key, val]) => (
+                        <div key={key} className="text-center">
+                          <div className="text-[8px] text-ink-400 font-mono">{key}</div>
+                          <div className="text-xs font-mono font-bold text-ink-100">{val}</div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
-                <p className="text-xs text-ink-400 mt-3">
+                <p className="text-xs text-ink-400 mt-4 text-center max-w-xs">
                   {lang === 'zh'
                     ? '在球场上点击高亮的位置来放置。'
                     : 'Click a highlighted slot on the pitch to place.'}
@@ -386,22 +425,23 @@ function DraftView() {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
+                className="flex flex-col flex-1"
               >
-                <div className="mb-4">
-                  <h2 className="font-display font-bold text-lg text-white">
-                    {t('spin')}
-                  </h2>
+                <div className="mb-3">
+                  <h2 className="font-display font-bold text-lg text-white">{t('spin')}</h2>
                   <p className="text-xs text-ink-400">
                     {lang === 'zh'
                       ? '转动转盘，随机获得一支球队和一个赛季。'
                       : 'Spin to land on a random club and season.'}
                   </p>
                 </div>
-                <Wheel
-                  options={options}
-                  disabled={false}
-                  onLanded={(clubId, season) => game.doSpin(clubId, season)}
-                />
+                <div className="flex-1 flex items-center justify-center">
+                  <Wheel
+                    options={options}
+                    disabled={false}
+                    onLanded={(clubId, season) => game.doSpin(clubId, season)}
+                  />
+                </div>
               </motion.div>
             ) : (
               <motion.div
@@ -409,6 +449,7 @@ function DraftView() {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
+                className="flex flex-col flex-1 min-h-0"
               >
                 <SquadPicker
                   players={squadPlayers}
@@ -420,7 +461,7 @@ function DraftView() {
                 />
                 <button
                   onClick={() => game.clearSpin()}
-                  className="mt-4 w-full py-2.5 rounded-full border border-ink-700 text-ink-300 text-sm font-medium hover:border-ink-500 hover:text-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+                  className="mt-3 w-full py-2.5 rounded-full border border-ink-700 text-ink-300 text-sm font-medium hover:border-ink-500 hover:text-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
                 >
                   {t('reroll')}
                 </button>
@@ -430,6 +471,119 @@ function DraftView() {
         </div>
       </div>
     </motion.div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Strength bars — multi-dimensional team score
+// ---------------------------------------------------------------------------
+
+function StrengthBars({
+  strength,
+  t,
+}: {
+  strength: { overall: number; attack: number; midfield: number; defence: number };
+  t: (key: any) => string;
+}) {
+  const bars = [
+    { label: t('overall'), value: strength.overall, color: 'bg-accent' },
+    { label: t('attack'), value: strength.attack, color: 'bg-red-500' },
+    { label: t('midfield'), value: strength.midfield, color: 'bg-green-500' },
+    { label: t('defence'), value: strength.defence, color: 'bg-blue-500' },
+  ];
+  return (
+    <div className="grid grid-cols-4 gap-2">
+      {bars.map((b) => (
+        <div key={b.label} className="rounded-lg border border-ink-800 bg-ink-900/40 p-2">
+          <div className="text-[10px] text-ink-400 font-mono uppercase mb-1">{b.label}</div>
+          <div className="flex items-baseline gap-1.5">
+            <span className="font-display font-black text-xl text-white tabular-nums">
+              {Math.round(b.value)}
+            </span>
+          </div>
+          <div className="mt-1 h-1.5 rounded-full bg-ink-800 overflow-hidden">
+            <div
+              className={`h-full ${b.color} rounded-full transition-all duration-500`}
+              style={{ width: `${b.value}%` }}
+            />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Bench — drafted but unplaced players
+// ---------------------------------------------------------------------------
+
+function Bench({
+  bench,
+  showRatings,
+  onPlace,
+  slots,
+  lang,
+  t,
+}: {
+  bench: Player[];
+  showRatings: boolean;
+  onPlace: (player: Player, slotId: string) => void;
+  slots: any[];
+  lang: string;
+  t: (key: any) => string;
+}) {
+  const [selected, setSelected] = useState<Player | null>(null);
+
+  // Find valid slots for the selected bench player.
+  const validSlots = selected
+    ? slots.filter((s: any) => {
+        if (s.player) return false;
+        return selected.positions.includes(s.position);
+      })
+    : [];
+
+  return (
+    <div className="rounded-xl border border-ink-800 bg-ink-900/40 p-3">
+      <div className="text-xs font-mono text-ink-400 mb-2">
+        {t('bench')} ({bench.length})
+      </div>
+      <div className="flex flex-wrap gap-2">
+        {bench.map((p) => (
+          <button
+            key={p.id}
+            onClick={() => setSelected(selected?.id === p.id ? null : p)}
+            className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-all ${
+              selected?.id === p.id
+                ? 'border-accent bg-accent/10 text-accent'
+                : 'border-ink-700 text-ink-300 hover:border-ink-500'
+            }`}
+          >
+            {showRatings && <span className="font-mono font-bold mr-1">{p.rating}</span>}
+            {lang === 'zh' ? p.nameZh : p.name}
+            <span className="text-ink-500 ml-1">{p.position}</span>
+          </button>
+        ))}
+      </div>
+      {selected && validSlots.length > 0 && (
+        <div className="mt-2 flex flex-wrap gap-1.5">
+          <span className="text-xs text-ink-500 self-center">
+            {lang === 'zh' ? '放入：' : 'Place at:'}
+          </span>
+          {validSlots.map((s: any) => (
+            <button
+              key={s.slotId}
+              onClick={() => {
+                onPlace(selected, s.slotId);
+                setSelected(null);
+              }}
+              className="px-2.5 py-1 rounded-md text-xs font-mono border border-green-600/40 text-green-300 bg-green-600/10 hover:bg-green-600/20 transition-colors"
+            >
+              {s.position}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -447,7 +601,7 @@ function Section({
   children: React.ReactNode;
 }) {
   return (
-    <div className="mb-8">
+    <div className="mb-6">
       <div className="flex items-baseline gap-3 mb-3">
         <h2 className="font-display font-bold text-sm text-ink-200 uppercase tracking-wide">
           {label}

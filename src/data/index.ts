@@ -49,12 +49,13 @@ function buildClubSeasonIndex(): Record<string, ClubSeason[]> {
 
 const CLUB_SEASON_INDEX = buildClubSeasonIndex();
 
-/** All draftable club-seasons for a competition, optionally filtered to a season range. */
+/** All draftable club-seasons for a competition, optionally filtered to a season range.
+ *  Only includes club-seasons with at least 7 players (enough to fill most of an XI). */
 export function clubSeasonsFor(
   competitionId: string,
   seasonRange?: [string, string],
 ): ClubSeason[] {
-  const all = CLUB_SEASON_INDEX[competitionId] ?? [];
+  const all = (CLUB_SEASON_INDEX[competitionId] ?? []).filter((cs) => cs.playerCount >= 7);
   if (!seasonRange) return all;
   const [from, to] = seasonRange;
   return all.filter((cs) => cs.season >= from && cs.season <= to);

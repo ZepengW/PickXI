@@ -24,9 +24,10 @@ interface GameState {
   phase: Phase;
   slots: SquadSlot[];
   draftedIds: string[];
+  /** Drafted players not currently placed in any slot (bench). */
+  bench: Player[];
   spin: SpinResult | null;
   spinning: boolean;
-  /** Player picked from the squad but not yet placed on the pitch. */
   pendingPlayer: Player | null;
   result: SimResult | null;
 
@@ -40,16 +41,18 @@ interface GameState {
   startDraft: () => void;
   doSpin: (clubId: string, season: string) => void;
   clearSpin: () => void;
-  /** Pick a player from the spun squad — enters "placement" mode. */
   pickPlayer: (player: Player) => void;
-  /** Place the pending player into a slot. */
   placePlayer: (slotId: string) => void;
-  /** Cancel placement (return player to the squad list). */
   cancelPlacement: () => void;
   removePlayer: (slotId: string) => void;
+  /** Move a placed player back to the bench. */
+  unplacePlayer: (slotId: string) => void;
+  /** Place a bench player onto a slot. */
+  placeBenchPlayer: (player: Player, slotId: string) => void;
 
   runSim: () => void;
   reset: () => void;
+  restartAll: () => void;
   backToSetup: () => void;
 }
 
@@ -61,6 +64,56 @@ function emptySlots(formationId: string): SquadSlot[] {
     player: null,
     positionFit: null,
   }));
+}
+
+/**
+ * Try to auto-place drafted players into a new formation's slots.
+ * Returns the new slots and any players that couldn't be placed (bench).
+ */
+function autoPlace(
+  formationId: string,
+  players: Player[],
+): { slots: SquadSlot[]; bench: Player[] } {
+  const f = getFormation(formationId);
+  const slots: SquadSlot[] = f.slots.map((s) => ({
+    slotId: s.id,
+    position: s.position,
+    player: null,
+    positionFit: null,
+  }));
+  const bench: Player[] = [];
+
+  // Sort players by rating descending — try to place best players first.
+  const sorted = [...players].sort((a, b) => b.rating - a.rating);
+
+  for (const player of sorted) {
+    // Try primary position first.
+    let placed = false;
+    for (const slot of slots) {
+      if (slot.player) continue;
+      if (positionFit(player, slot.position) === 'primary') {
+        slot.player = player;
+        slot.positionFit = 'primary';
+        placed = true;
+        break;
+      }
+    }
+    if (placed) continue;
+
+    // Try secondary position.
+    for (const slot of slots) {
+      if (slot.player) continue;
+      if (positionFit(player, slot.position) === 'secondary') {
+        slot.player = player;
+        slot.positionFit = 'secondary';
+        placed = true;
+        break;
+      }
+    }
+    if (!placed) bench.push(player);
+  }
+
+  return { slots, bench };
 }
 
 export const useGame = create<GameState>()(
@@ -76,6 +129,7 @@ export const useGame = create<GameState>()(
       phase: 'setup',
       slots: emptySlots('433'),
       draftedIds: [],
+      bench: [],
       spin: null,
       spinning: false,
       pendingPlayer: null,
@@ -93,18 +147,35 @@ export const useGame = create<GameState>()(
           seasonTo: to,
           slots: emptySlots(get().formationId),
           draftedIds: [],
+          bench: [],
           spin: null,
           pendingPlayer: null,
         });
       },
-      setFormation: (id) =>
+      setFormation: (id) => {
+        const state = get();
+        // Collect all currently placed players.
+        const placedPlayers = state.slots
+          .filter((s) => s.player !== null)
+          .map((s) => s.player!) as Player[];
+        // Combine with bench players.
+        const allPlayers = [...placedPlayers, ...state.bench];
+
+        if (allPlayers.length === 0) {
+          // No players drafted — just switch formation.
+          set({ formationId: id, slots: emptySlots(id) });
+          return;
+        }
+
+        // Auto-place players into the new formation.
+        const { slots, bench } = autoPlace(id, allPlayers);
         set({
           formationId: id,
-          slots: emptySlots(id),
-          draftedIds: [],
-          spin: null,
+          slots,
+          bench,
           pendingPlayer: null,
-        }),
+        });
+      },
       setSeasonRange: (from, to) => set({ seasonFrom: from, seasonTo: to }),
       setShowRatings: (show) => set({ showRatings: show }),
 
@@ -113,6 +184,7 @@ export const useGame = create<GameState>()(
           phase: 'draft',
           slots: emptySlots(get().formationId),
           draftedIds: [],
+          bench: [],
           spin: null,
           pendingPlayer: null,
           result: null,
@@ -132,9 +204,8 @@ export const useGame = create<GameState>()(
         const slot = slots.find((s) => s.slotId === slotId);
         if (!slot) return;
 
-        // Check position fit
         const fit = positionFit(pendingPlayer, slot.position);
-        if (!fit) return; // can't place here
+        if (!fit) return;
 
         // If player already placed elsewhere, remove from old slot first.
         const newSlots = slots.map((s) => {
@@ -142,9 +213,15 @@ export const useGame = create<GameState>()(
           if (s.slotId === slotId) return { ...s, player: pendingPlayer, positionFit: fit };
           return s;
         });
+
+        // If the target slot had a player, they go to the bench.
+        const displaced = slot.player;
+        const newBench = displaced ? [...get().bench, displaced] : get().bench;
+
         set({
           slots: newSlots,
           draftedIds: [...draftedIds, pendingPlayer.id],
+          bench: newBench,
           spin: null,
           pendingPlayer: null,
         });
@@ -153,14 +230,52 @@ export const useGame = create<GameState>()(
       cancelPlacement: () => set({ pendingPlayer: null }),
 
       removePlayer: (slotId) => {
-        const { slots, draftedIds } = get();
+        const { slots, draftedIds, bench } = get();
         const slot = slots.find((s) => s.slotId === slotId);
         if (!slot?.player) return;
+        const removed = slot.player;
         set({
           slots: slots.map((s) =>
             s.slotId === slotId ? { ...s, player: null, positionFit: null } : s,
           ),
-          draftedIds: draftedIds.filter((id) => id !== slot.player!.id),
+          draftedIds: draftedIds.filter((id) => id !== removed!.id),
+          bench,
+        });
+      },
+
+      unplacePlayer: (slotId) => {
+        const { slots, bench } = get();
+        const slot = slots.find((s) => s.slotId === slotId);
+        if (!slot?.player) return;
+        const player = slot.player;
+        set({
+          slots: slots.map((s) =>
+            s.slotId === slotId ? { ...s, player: null, positionFit: null } : s,
+          ),
+          bench: [...bench, player],
+        });
+      },
+
+      placeBenchPlayer: (player, slotId) => {
+        const { slots, bench } = get();
+        const slot = slots.find((s) => s.slotId === slotId);
+        if (!slot) return;
+
+        const fit = positionFit(player, slot.position);
+        if (!fit) return;
+
+        // If target slot had a player, they go to bench.
+        const displaced = slot.player;
+        const newBench = [
+          ...bench.filter((p) => p.id !== player.id),
+          ...(displaced ? [displaced] : []),
+        ];
+
+        set({
+          slots: slots.map((s) =>
+            s.slotId === slotId ? { ...s, player, positionFit: fit } : s,
+          ),
+          bench: newBench,
         });
       },
 
@@ -175,11 +290,33 @@ export const useGame = create<GameState>()(
           phase: 'setup',
           slots: emptySlots(get().formationId),
           draftedIds: [],
+          bench: [],
           spin: null,
           spinning: false,
           pendingPlayer: null,
           result: null,
         }),
+
+      restartAll: () => {
+        // Clear persisted state and reset to defaults.
+        localStorage.removeItem('dreamxi-store');
+        set({
+          lang: 'zh',
+          competitionId: 'epl',
+          formationId: '433',
+          seasonFrom: '1992-93',
+          seasonTo: '2024-25',
+          showRatings: true,
+          phase: 'setup',
+          slots: emptySlots('433'),
+          draftedIds: [],
+          bench: [],
+          spin: null,
+          spinning: false,
+          pendingPlayer: null,
+          result: null,
+        });
+      },
 
       backToSetup: () => set({ phase: 'setup', result: null }),
     }),
@@ -193,7 +330,6 @@ export const useGame = create<GameState>()(
         seasonTo: s.seasonTo,
         showRatings: s.showRatings,
       }),
-      // Fix hydration: recompute slots to match persisted formationId.
       onRehydrateStorage: () => (state) => {
         if (state) {
           state.slots = emptySlots(state.formationId);

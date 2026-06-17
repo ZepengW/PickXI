@@ -123,6 +123,13 @@ export const STRINGS = {
   back: { zh: '返回', en: 'Back' },
   next: { zh: '下一步', en: 'Next' },
   langToggle: { zh: 'EN', en: '中' },
+  restartAll: { zh: '完全重新开始', en: 'Restart all' },
+  bench: { zh: '替补席', en: 'Bench' },
+  teamStrength: { zh: '球队实力', en: 'Team strength' },
+  attack: { zh: '进攻', en: 'Attack' },
+  midfield: { zh: '中场', en: 'Midfield' },
+  defence: { zh: '防守', en: 'Defence' },
+  overall: { zh: '总评', en: 'Overall' },
   footerNote: {
     zh: 'DreamXI 是独立粉丝作品，与任何俱乐部、联赛、赛事或数据提供商无关。球员评分基于公开数据的独立解读，仅供参考。',
     en: 'DreamXI is an independent fan-made game, not affiliated with any club, league, competition, or ratings provider. Ratings are an independent interpretation for descriptive purposes only.',

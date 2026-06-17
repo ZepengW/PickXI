@@ -9,6 +9,7 @@ interface ResultsViewProps {
   competitionId: string;
   onPlayAgain: () => void;
   onChangeSetup: () => void;
+  onRestartAll: () => void;
 }
 
 const OUTCOME_STYLE: Record<string, string> = {
@@ -31,6 +32,7 @@ export default function ResultsView({
   competitionId,
   onPlayAgain,
   onChangeSetup,
+  onRestartAll,
 }: ResultsViewProps) {
   const { lang, t } = useLang();
   const comp = getCompetition(competitionId);
@@ -238,6 +240,12 @@ export default function ResultsView({
             className="px-7 py-3.5 border border-ink-600 text-ink-200 font-medium rounded-full hover:border-ink-400 hover:text-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
           >
             {t('changeSetup')}
+          </button>
+          <button
+            onClick={onRestartAll}
+            className="px-7 py-3.5 border border-red-900/50 text-red-400/70 font-medium rounded-full hover:border-red-500 hover:text-red-400 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+          >
+            {t('restartAll')}
           </button>
         </div>
       </motion.div>

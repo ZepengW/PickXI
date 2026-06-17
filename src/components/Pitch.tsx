@@ -32,7 +32,6 @@ const GROUP_COLOR: Record<string, string> = {
 interface PitchProps {
   formationId: string;
   slots: SquadSlot[];
-  /** Player waiting to be placed — slots they can play will be highlighted. */
   pendingPlayer?: Player | null;
   selectedSlotId?: string | null;
   onSelectSlot?: (slotId: string) => void;
@@ -59,39 +58,48 @@ export default function Pitch({
   return (
     <div
       className={`relative w-full aspect-[3/4] rounded-2xl overflow-hidden pitch-grass noise shadow-2xl ring-1 ring-black/40 ${
-        compact ? 'max-w-[280px]' : 'max-w-[440px]'
+        compact ? 'max-w-[280px]' : 'max-w-none'
       }`}
     >
-      {/* Pitch markings — viewBox matches aspect-[3/4] exactly (100×133.33) */}
+      {/*
+        Pitch markings drawn in the SAME coordinate system as formation slots:
+        x: 0-100 (left→right), y: 0-100 (own goal at bottom→attacking goal at top).
+        SVG y-axis is flipped via transform so y=0 is at the bottom.
+        This guarantees perfect alignment between markings and player tokens.
+      */}
       <svg
-        viewBox="0 0 100 133.33"
+        viewBox="0 0 100 100"
         className="absolute inset-0 w-full h-full"
         preserveAspectRatio="none"
+        style={{ transform: 'scaleY(-1)' }}
       >
-        <g fill="none" stroke="rgba(255,255,255,0.3)" strokeWidth="0.4">
+        <g fill="none" stroke="rgba(255,255,255,0.3)" strokeWidth="0.5">
           {/* Outer boundary */}
-          <rect x="3" y="3" width="94" height="127.33" />
+          <rect x="4" y="4" width="92" height="92" />
           {/* Halfway line */}
-          <line x1="3" y1="66.67" x2="97" y2="66.67" />
+          <line x1="4" y1="50" x2="96" y2="50" />
           {/* Centre circle */}
-          <circle cx="50" cy="66.67" r="11" />
-          <circle cx="50" cy="66.67" r="1" fill="rgba(255,255,255,0.4)" />
-          {/* Top penalty box (attacking goal) */}
-          <rect x="22" y="3" width="56" height="20" />
-          {/* Top 6-yard box */}
-          <rect x="37" y="3" width="26" height="8" />
-          {/* Top penalty arc */}
-          <path d="M 38 23 A 11 11 0 0 0 62 23" />
-          {/* Bottom penalty box (own goal) */}
-          <rect x="22" y="110.33" width="56" height="20" />
-          {/* Bottom 6-yard box */}
-          <rect x="37" y="122.33" width="26" height="8" />
-          {/* Bottom penalty arc */}
-          <path d="M 38 110.33 A 11 11 0 0 1 62 110.33" />
+          <circle cx="50" cy="50" r="9" />
+          {/* Centre spot */}
+          <circle cx="50" cy="50" r="0.8" fill="rgba(255,255,255,0.4)" />
+
+          {/* Attacking goal area (top, y near 100) */}
+          <rect x="20" y="80" width="60" height="16" />
+          {/* Attacking 6-yard box */}
+          <rect x="37" y="92" width="26" height="4" />
+          {/* Attacking penalty arc */}
+          <path d="M 38 80 A 9 9 0 0 1 62 80" />
+
+          {/* Own goal area (bottom, y near 0) */}
+          <rect x="20" y="4" width="60" height="16" />
+          {/* Own 6-yard box */}
+          <rect x="37" y="4" width="26" height="4" />
+          {/* Own penalty arc */}
+          <path d="M 38 20 A 9 9 0 0 0 62 20" />
         </g>
       </svg>
 
-      {/* Slots */}
+      {/* Slots — positioned using formation coords directly */}
       {formation.slots.map((fs, idx) => {
         const slot = slots.find((s) => s.slotId === fs.id);
         const player = slot?.player ?? null;
@@ -100,7 +108,6 @@ export default function Pitch({
         const color = GROUP_COLOR[group];
         const label = POS_LABEL[fs.position][lang];
 
-        // Placement mode: highlight valid slots
         const canPlace = placing && pendingPlayer
           ? positionFit(pendingPlayer, fs.position) !== null
           : false;
@@ -111,7 +118,6 @@ export default function Pitch({
           ? positionFit(pendingPlayer, fs.position) === 'secondary'
           : false;
 
-        // In placement mode, only valid slots are clickable
         const clickable = placing ? canPlace : interactive;
 
         return (
