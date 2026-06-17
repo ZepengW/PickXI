@@ -1,12 +1,13 @@
 import { motion } from 'framer-motion';
-import type { SimResult } from '../types';
+import type { SimResult, SquadSlot } from '../types';
 import { useLang } from '../i18n/useLang';
-import { outcomeOf } from '../engine/simulation';
+import { outcomeOf, teamStrength, positionGroup } from '../engine/simulation';
 import { getCompetition } from '../data';
 
 interface ResultsViewProps {
   result: SimResult;
   competitionId: string;
+  slots: SquadSlot[];
   onPlayAgain: () => void;
   onChangeSetup: () => void;
   onRestartAll: () => void;
@@ -30,6 +31,7 @@ const GRADE_COLOR: Record<string, string> = {
 export default function ResultsView({
   result,
   competitionId,
+  slots,
   onPlayAgain,
   onChangeSetup,
   onRestartAll,
@@ -37,6 +39,7 @@ export default function ResultsView({
   const { lang, t } = useLang();
   const comp = getCompetition(competitionId);
   const isCup = comp?.type === 'cup';
+  const strength = teamStrength(slots);
 
   const champ = result.position === 1;
   const played = result.matches.length;
@@ -222,6 +225,78 @@ export default function ResultsView({
                     {m.goalsFor}-{m.goalsAgainst}
                   </span>
                 </motion.div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Squad detail — always show full info on results page */}
+        <div className="mt-8 rounded-2xl border border-ink-800 overflow-hidden">
+          <div className="px-5 py-3 border-b border-ink-800 flex items-center justify-between">
+            <span className="font-display font-bold text-sm text-ink-100">
+              {zh ? '队伍详情' : 'Squad Details'}
+            </span>
+            {/* Team strength scores */}
+            <div className="flex items-center gap-3 text-xs font-mono">
+              <span className="text-accent">
+                {zh ? '总评' : 'OVR'} <b className="text-base">{Math.round(strength.overall)}</b>
+              </span>
+              <span className="text-red-400">
+                {zh ? '进攻' : 'ATT'} <b className="text-base">{Math.round(strength.attack)}</b>
+              </span>
+              <span className="text-green-400">
+                {zh ? '中场' : 'MID'} <b className="text-base">{Math.round(strength.midfield)}</b>
+              </span>
+              <span className="text-blue-400">
+                {zh ? '防守' : 'DEF'} <b className="text-base">{Math.round(strength.defence)}</b>
+              </span>
+            </div>
+          </div>
+          <div className="divide-y divide-ink-800/60">
+            {slots.filter((s) => s.player).map((slot) => {
+              const p = slot.player!;
+              const group = positionGroup(slot.position);
+              const groupColor = group === 'GK' ? 'text-yellow-400' : group === 'DEF' ? 'text-blue-400' : group === 'MID' ? 'text-green-400' : 'text-red-400';
+              const fitLabel = slot.positionFit === 'primary' ? '' : slot.positionFit === 'secondary' ? ' (-5)' : ' (-15)';
+              return (
+                <div key={slot.slotId} className="flex items-center gap-3 px-5 py-2.5">
+                  {/* Position code */}
+                  <span className={`font-mono font-bold text-sm w-10 text-center ${groupColor}`}>
+                    {slot.position}
+                  </span>
+                  {/* Rating */}
+                  <span className="font-mono font-black text-lg text-ink-100 w-10 text-center">
+                    {p.rating}
+                  </span>
+                  {/* Name + nationality */}
+                  <div className="flex-1 min-w-0">
+                    <div className="font-semibold text-sm text-ink-100 truncate">
+                      {zh ? p.nameZh : p.name}
+                      <span className="text-ink-500 text-xs ml-1.5">{fitLabel}</span>
+                    </div>
+                    <div className="text-xs text-ink-400 truncate">
+                      {zh ? p.nationalityZh : p.nationality}
+                      {p.number ? ` · #${p.number}` : ''}
+                      {` · ${p.position}`}
+                    </div>
+                  </div>
+                  {/* Attributes */}
+                  <div className="hidden sm:flex items-center gap-2 text-xs font-mono">
+                    {([
+                      ['PAC', p.attr.pace],
+                      ['SHO', p.attr.shooting],
+                      ['PAS', p.attr.passing],
+                      ['DRI', p.attr.dribbling],
+                      ['DEF', p.attr.defending],
+                      ['PHY', p.attr.physical],
+                    ] as const).map(([key, val]) => (
+                      <div key={key} className="text-center w-9">
+                        <div className="text-[8px] text-ink-500">{key}</div>
+                        <div className={`font-bold ${val >= 85 ? 'text-accent' : val >= 75 ? 'text-ink-100' : 'text-ink-400'}`}>{val}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
               );
             })}
           </div>

@@ -145,3 +145,51 @@ export interface SimResult {
 }
 
 export type Lang = 'zh' | 'en';
+
+/** Difficulty levels — controls what info is visible during draft. */
+export type Difficulty = 'easy' | 'normal' | 'hard' | 'divine';
+
+/** What information is visible at a given difficulty level. */
+export interface DifficultyConfig {
+  /** Show player overall rating. */
+  showRatings: boolean;
+  /** Show recommended position (primary/secondary highlight). */
+  showPosition: boolean;
+  /** Show tier color coding on cards. */
+  showTier: boolean;
+  /** Show nationality / country. */
+  showNationality: boolean;
+  /** Show team strength bars. */
+  showTeamScore: boolean;
+}
+
+export const DIFFICULTY_CONFIGS: Record<Difficulty, DifficultyConfig> = {
+  easy: {
+    showRatings: true,
+    showPosition: true,
+    showTier: true,
+    showNationality: true,
+    showTeamScore: true,
+  },
+  normal: {
+    showRatings: true,
+    showPosition: true,
+    showTier: true,
+    showNationality: true,
+    showTeamScore: false,
+  },
+  hard: {
+    showRatings: false,
+    showPosition: true,
+    showTier: false,
+    showNationality: true,
+    showTeamScore: false,
+  },
+  divine: {
+    showRatings: false,
+    showPosition: false,
+    showTier: false,
+    showNationality: false,
+    showTeamScore: false,
+  },
+};

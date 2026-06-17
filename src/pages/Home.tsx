@@ -38,8 +38,10 @@ export default function Home() {
             fetchPriority="high"
             className="w-full h-full object-cover"
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-ink-950 via-ink-950/70 to-ink-950/40" />
-          <div className="absolute inset-0 bg-gradient-to-r from-ink-950/80 via-transparent to-ink-950/30" />
+          {/* Hero overlays are always dark — the background image requires it
+              regardless of theme. Uses fixed rgba, not theme variables. */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black via-black/70 to-black/40" />
+          <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-transparent to-black/30" />
         </div>
 
         <div className="relative mx-auto max-w-7xl px-5 sm:px-8 w-full pt-20 pb-12">

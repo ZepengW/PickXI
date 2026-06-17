@@ -19,6 +19,8 @@ interface PitchProps {
   onSelectSlot?: (slotId: string) => void;
   onRemovePlayer?: (slotId: string) => void;
   showRatings?: boolean;
+  /** Show position recommendation highlights (primary/secondary/other). */
+  showPosition?: boolean;
   compact?: boolean;
 }
 
@@ -30,6 +32,7 @@ export default function Pitch({
   onSelectSlot,
   onRemovePlayer,
   showRatings = true,
+  showPosition = true,
   compact = false,
 }: PitchProps) {
   const { lang } = useLang();
@@ -86,9 +89,11 @@ export default function Pitch({
         const fit = placing && pendingPlayer
           ? positionFit(pendingPlayer, fs.position)
           : null;
-        const isPrimary = fit === 'primary';
-        const isSecondary = fit === 'secondary';
-        const isOther = fit === 'other';
+        // When showPosition is off (divine difficulty), don't color-code slots.
+        const isPrimary = showPosition && fit === 'primary';
+        const isSecondary = showPosition && fit === 'secondary';
+        const isOther = showPosition && fit === 'other';
+        const isNeutral = placing && !showPosition; // all slots same neutral color
         const occupied = !!player;
         const clickable = placing ? !occupied : interactive;
 
@@ -121,7 +126,9 @@ export default function Pitch({
                     ? 'rgba(250,204,21,0.25)'
                     : isOther
                       ? 'rgba(249,115,22,0.2)'
-                      : 'rgba(10,12,18,0.7)',
+                      : isNeutral
+                        ? 'rgba(245,197,66,0.15)'
+                        : 'rgba(10,12,18,0.7)',
               border: `1.5px solid ${
                 occupied
                   ? 'rgba(255,255,255,0.5)'
@@ -131,7 +138,9 @@ export default function Pitch({
                       ? 'rgba(250,204,21,0.8)'
                       : isOther
                         ? 'rgba(249,115,22,0.7)'
-                        : 'rgba(255,255,255,0.18)'
+                        : isNeutral
+                          ? 'rgba(245,197,66,0.5)'
+                          : 'rgba(255,255,255,0.18)'
               }`,
               backdropFilter: 'blur(2px)',
             }}

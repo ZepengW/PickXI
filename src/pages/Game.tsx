@@ -15,7 +15,8 @@ import {
   playersForClubSeason,
 } from '../data';
 import { teamStrength } from '../engine/simulation';
-import type { Player, SquadSlot } from '../types';
+import { DIFFICULTY_CONFIGS } from '../types';
+import type { Difficulty, Player, SquadSlot } from '../types';
 import type { StringKey } from '../i18n/strings';
 
 export default function Game() {
@@ -34,6 +35,7 @@ export default function Game() {
               key="results"
               result={game.result}
               competitionId={game.competitionId}
+              slots={game.slots}
               onPlayAgain={() => game.startDraft()}
               onChangeSetup={() => game.backToSetup()}
               onRestartAll={() => game.restartAll()}
@@ -49,14 +51,22 @@ export default function Game() {
 // SETUP
 // ---------------------------------------------------------------------------
 
+const DIFFICULTIES: { id: Difficulty; labelKey: StringKey; ruleKey: StringKey }[] = [
+  { id: 'easy', labelKey: 'diffEasy', ruleKey: 'diffEasyRule' },
+  { id: 'normal', labelKey: 'diffNormal', ruleKey: 'diffNormalRule' },
+  { id: 'hard', labelKey: 'diffHard', ruleKey: 'diffHardRule' },
+  { id: 'divine', labelKey: 'diffDivine', ruleKey: 'diffDivineRule' },
+];
+
 function SetupView() {
   const { lang, t } = useLang();
   const game = useGame();
-  const { competitionId, formationId, seasonFrom, seasonTo, showRatings, hideTier } = game;
+  const { competitionId, formationId, seasonFrom, seasonTo, difficulty, opponentSeason } = game;
   const seasons = availableSeasons(competitionId);
 
   const safeFrom = seasons.includes(seasonFrom) ? seasonFrom : seasons[0] ?? '';
   const safeTo = seasons.includes(seasonTo) ? seasonTo : seasons[seasons.length - 1] ?? '';
+  const safeOppSeason = seasons.includes(opponentSeason) ? opponentSeason : safeTo;
 
   return (
     <motion.div
@@ -153,51 +163,51 @@ function SetupView() {
         </div>
       </Section>
 
+      {/* Opponent season */}
+      <Section label={t('opponentSeason')} hint={t('opponentSeasonHint')}>
+        <div className="flex flex-wrap items-center gap-3">
+          <select
+            value={safeOppSeason}
+            onChange={(e) => game.setOpponentSeason(e.target.value)}
+            aria-label={t('opponentSeason')}
+            className="bg-ink-900 border border-ink-700 rounded-lg px-4 py-2.5 text-sm text-ink-100 font-mono focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:border-accent"
+          >
+            {seasons.map((s) => (
+              <option key={s} value={s}>{s}</option>
+            ))}
+          </select>
+        </div>
+      </Section>
+
       {/* Difficulty */}
       <Section label={t('difficulty')}>
-        <div className="space-y-3">
-          {/* Show/Hide ratings */}
-          <div className="flex gap-2">
-            <button
-              onClick={() => game.setShowRatings(true)}
-              className={`px-5 py-2.5 rounded-full text-sm font-medium border transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
-                showRatings
-                  ? 'border-accent bg-accent/10 text-accent'
-                  : 'border-ink-700 text-ink-300 hover:border-ink-500'
-              }`}
-            >
-              {t('showRatings')}
-            </button>
-            <button
-              onClick={() => game.setShowRatings(false)}
-              className={`px-5 py-2.5 rounded-full text-sm font-medium border transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
-                !showRatings
-                  ? 'border-accent bg-accent/10 text-accent'
-                  : 'border-ink-700 text-ink-300 hover:border-ink-500'
-              }`}
-            >
-              {t('hideRatings')}
-            </button>
-          </div>
-          {/* Hide tier colors */}
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => game.setHideTier(!hideTier)}
-              className={`px-5 py-2.5 rounded-full text-sm font-medium border transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
-                hideTier
-                  ? 'border-accent bg-accent/10 text-accent'
-                  : 'border-ink-700 text-ink-300 hover:border-ink-500'
-              }`}
-            >
-              {t('hideTier')}
-            </button>
-            <span className="text-xs text-ink-500">
-              {lang === 'zh'
-                ? '隐藏球员等级颜色，所有球员卡片使用统一配色'
-                : 'Hide tier color coding; all player cards use the same neutral color'}
-            </span>
-          </div>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+          {DIFFICULTIES.map((d) => {
+            const isSel = difficulty === d.id;
+            return (
+              <button
+                key={d.id}
+                onClick={() => game.setDifficulty(d.id)}
+                title={t(d.ruleKey)}
+                className={`relative px-4 py-3 rounded-xl text-sm font-bold border transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent text-center ${
+                  isSel
+                    ? 'border-accent bg-accent/10 text-accent'
+                    : 'border-ink-700 text-ink-300 hover:border-ink-500'
+                }`}
+              >
+                {t(d.labelKey)}
+                {/* Tooltip on hover showing the rule */}
+                <span className="pointer-events-none absolute left-1/2 -translate-x-1/2 bottom-full mb-2 w-56 px-3 py-2 rounded-lg bg-ink-800 border border-ink-600 text-xs font-normal text-ink-200 opacity-0 group-hover:opacity-100 transition-opacity z-20">
+                  {t(d.ruleKey)}
+                </span>
+              </button>
+            );
+          })}
         </div>
+        {/* Always-visible rule description for the selected difficulty */}
+        <p className="mt-3 text-xs text-ink-400 leading-relaxed">
+          {t(DIFFICULTIES.find((d) => d.id === difficulty)!.ruleKey)}
+        </p>
       </Section>
 
       <div className="mt-8 flex justify-center">
@@ -224,14 +234,15 @@ function DraftView() {
     formationId,
     seasonFrom,
     seasonTo,
-    showRatings,
-    hideTier,
+    difficulty,
     slots,
     draftedIds,
     spin,
     pendingPlayer,
     bench,
   } = game;
+
+  const diffCfg = DIFFICULTY_CONFIGS[difficulty];
 
   const [simulating, setSimulating] = useState(false);
   const [showFormationPicker, setShowFormationPicker] = useState(false);
@@ -291,17 +302,30 @@ function DraftView() {
             {formationId.toUpperCase()} ▾
           </button>
         </div>
-        <button
-          onClick={handleSimulate}
-          disabled={!complete || simulating}
-          className={`px-7 py-3 rounded-full font-bold text-base transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
-            complete
-              ? 'bg-accent text-ink-950 hover:bg-accent-dark'
-              : 'bg-ink-800 text-ink-500 cursor-not-allowed'
-          }`}
-        >
-          {simulating ? t('simulating') : t('simulate')}
-        </button>
+        <div className="flex items-center gap-2">
+          {/* Restart button in draft */}
+          <button
+            onClick={() => {
+              if (confirm(lang === 'zh' ? '确定要完全重新开始吗？所有已选球员将被清空。' : 'Restart completely? All drafted players will be cleared.')) {
+                game.restartAll();
+              }
+            }}
+            className="px-4 py-2 text-xs font-medium border border-ink-700 text-ink-400 rounded-full hover:border-red-500 hover:text-red-400 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+          >
+            {t('restartAll')}
+          </button>
+          <button
+            onClick={handleSimulate}
+            disabled={!complete || simulating}
+            className={`px-7 py-3 rounded-full font-bold text-base transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
+              complete
+                ? 'bg-accent text-ink-950 hover:bg-accent-dark'
+                : 'bg-ink-800 text-ink-500 cursor-not-allowed'
+            }`}
+          >
+            {simulating ? t('simulating') : t('simulate')}
+          </button>
+        </div>
       </div>
 
       {/* Formation picker dropdown */}
@@ -345,8 +369,8 @@ function DraftView() {
       <div className="flex-1 grid grid-cols-1 lg:grid-cols-[minmax(360px,1fr)_minmax(0,1.2fr)] gap-4 p-4 sm:p-6 min-h-0">
         {/* Left: Pitch + strength bars + bench */}
         <div className="flex flex-col gap-3 min-h-0">
-          {/* Strength bars */}
-          <StrengthBars strength={strength} t={t} />
+          {/* Strength bars — hidden in divine difficulty */}
+          {diffCfg.showTeamScore && <StrengthBars strength={strength} t={t} />}
 
           {/* Pitch — takes available space, but on mobile limit height */}
           <div className="flex-1 flex items-center justify-center min-h-0">
@@ -359,7 +383,8 @@ function DraftView() {
                   if (pendingPlayer) game.placePlayer(id);
                 }}
                 onRemovePlayer={(id) => game.removePlayer(id)}
-                showRatings={showRatings}
+                showRatings={diffCfg.showRatings}
+                showPosition={diffCfg.showPosition}
               />
             </div>
           </div>
@@ -367,8 +392,10 @@ function DraftView() {
           <p className="text-sm text-ink-500 text-center">
             {pendingPlayer
               ? lang === 'zh'
-                ? `将 ${pendingPlayer.nameZh} 放到任意位置。绿色=最佳，黄色=可踢(-5)，橙色=客串(-15)`
-                : `Place ${pendingPlayer.name} anywhere. Green=primary, Yellow=secondary(-5), Orange=out of position(-15)`
+                ? diffCfg.showPosition
+                  ? `将 ${pendingPlayer.nameZh} 放到任意位置。绿色=最佳，黄色=可踢(-5)，橙色=客串(-15)`
+                  : `将 ${pendingPlayer.nameZh} 放到任意位置。不同位置有不同分数加成。`
+                : `Place ${pendingPlayer.name} anywhere. Different positions give different score bonuses.`
               : lang === 'zh'
                 ? '转盘→选球员→放到任意位置。点击已放球员可移除。'
                 : 'Spin → pick → place anywhere. Tap a placed player to remove.'}
@@ -378,7 +405,7 @@ function DraftView() {
           {bench.length > 0 && (
             <Bench
               bench={bench}
-              showRatings={showRatings}
+              showRatings={diffCfg.showRatings}
               onPlace={(player, slotId) => game.placeBenchPlayer(player, slotId)}
               slots={slots}
               lang={lang}
@@ -402,7 +429,7 @@ function DraftView() {
                   {lang === 'zh' ? '放置球员' : 'Place Player'}
                 </h2>
                 <div className="inline-flex flex-col items-center gap-2 p-5 rounded-xl border border-accent/40 bg-accent/5">
-                  {showRatings && (
+                  {diffCfg.showRatings && (
                     <div className="text-4xl font-display font-black text-accent">
                       {pendingPlayer.rating}
                     </div>
@@ -411,9 +438,10 @@ function DraftView() {
                     {lang === 'zh' ? pendingPlayer.nameZh : pendingPlayer.name}
                   </div>
                   <div className="text-xs text-ink-400 font-mono">
-                    {pendingPlayer.position} · {lang === 'zh' ? pendingPlayer.nationalityZh : pendingPlayer.nationality}
+                    {pendingPlayer.position}
+                    {diffCfg.showNationality && ` · ${lang === 'zh' ? pendingPlayer.nationalityZh : pendingPlayer.nationality}`}
                   </div>
-                  {showRatings && (
+                  {diffCfg.showRatings && (
                     <div className="grid grid-cols-6 gap-2 mt-2">
                       {([
                         ['PAC', pendingPlayer.attr.pace],
@@ -479,8 +507,9 @@ function DraftView() {
                   players={squadPlayers}
                   onPick={(player) => game.pickPlayer(player)}
                   draftedIds={draftedSet}
-                  showRatings={showRatings}
-                  hideTier={hideTier}
+                  showRatings={diffCfg.showRatings}
+                  hideTier={!diffCfg.showTier}
+                  showNationality={diffCfg.showNationality}
                   clubId={spin.clubId}
                   season={spin.season}
                 />
@@ -559,7 +588,6 @@ function Bench({
 }) {
   const [selected, setSelected] = useState<Player | null>(null);
 
-  // Any empty slot can accept any player (with different scores).
   const emptySlots = selected
     ? slots.filter((s) => !s.player)
     : [];

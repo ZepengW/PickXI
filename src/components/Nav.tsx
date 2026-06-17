@@ -11,7 +11,7 @@ export default function Nav() {
   const onGame = location.pathname.startsWith('/game');
 
   return (
-    <header className="fixed top-0 inset-x-0 z-50">
+    <header className="fixed top-0 inset-x-0 z-50 backdrop-blur-md bg-ink-950/70 border-b border-ink-800/40">
       <div className="mx-auto max-w-7xl px-4 sm:px-8 h-14 sm:h-16 flex items-center justify-between">
         <Link to="/" className="flex items-center gap-2.5 group">
           <span className="font-display font-black text-xl sm:text-2xl tracking-tightest text-ink-100">

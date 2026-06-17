@@ -11,6 +11,7 @@ interface SquadPickerProps {
   draftedIds: Set<string>;
   showRatings: boolean;
   hideTier: boolean;
+  showNationality?: boolean;
   clubId: string;
   season: string;
 }
@@ -21,6 +22,7 @@ export default function SquadPicker({
   draftedIds,
   showRatings,
   hideTier,
+  showNationality = true,
   clubId,
   season,
 }: SquadPickerProps) {
@@ -75,6 +77,7 @@ export default function SquadPicker({
                     player={player}
                     showRatings={showRatings}
                     hideTier={hideTier}
+                    showNationality={showNationality}
                     disabled={drafted}
                     onClick={() => !drafted && onPick(player)}
                   />

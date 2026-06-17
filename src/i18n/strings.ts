@@ -60,9 +60,26 @@ export const STRINGS = {
   setupTitle: { zh: '赛前设置', en: 'Match setup' },
   formation: { zh: '阵型', en: 'Formation' },
   difficulty: { zh: '难度', en: 'Difficulty' },
-  showRatings: { zh: '显示评分', en: 'Show ratings' },
-  hideRatings: { zh: '隐藏评分（困难）', en: 'Hide ratings (hard)' },
-  hideTier: { zh: '隐藏等级颜色（困难）', en: 'Hide tier colors (hard)' },
+  diffEasy: { zh: '简单', en: 'Easy' },
+  diffNormal: { zh: '普通', en: 'Normal' },
+  diffHard: { zh: '困难', en: 'Hard' },
+  diffDivine: { zh: '云圣', en: 'Divine' },
+  diffEasyRule: {
+    zh: '所有信息可见：评分、推荐位置、等级颜色、国籍、队伍总分',
+    en: 'All info visible: ratings, position, tier, nationality, team score',
+  },
+  diffNormalRule: {
+    zh: '隐藏队伍总分，其余信息可见',
+    en: 'Team score hidden; all other info visible',
+  },
+  diffHardRule: {
+    zh: '隐藏评分、等级颜色、队伍总分；保留推荐位置和国籍',
+    en: 'Ratings, tier, team score hidden; position & nationality visible',
+  },
+  diffDivineRule: {
+    zh: '隐藏一切：评分、位置、等级、国籍、队伍总分。凭直觉选秀！',
+    en: 'Everything hidden: ratings, position, tier, nationality, team score. Draft by instinct!',
+  },
   draftMode: { zh: '选秀模式', en: 'Draft mode' },
   era: { zh: '时代范围', en: 'Era' },
   eraHint: {
@@ -73,6 +90,12 @@ export const STRINGS = {
   eraTo: { zh: '结束赛季', en: 'To season' },
   season: { zh: '赛季', en: 'seasons' },
   startDraft: { zh: '开始选秀', en: 'Start draft' },
+  opponentSeason: { zh: '对手赛季', en: 'Opponent season' },
+  opponentSeasonHint: {
+    zh: '指定一个赛季，模拟时用该赛季的所有队伍作为对手。',
+    en: 'Pick a season; all clubs from that season will be your opponents.',
+  },
+  opponentSeasonAny: { zh: '不限制', en: 'Any' },
 
   // Draft
   spin: { zh: '转动转盘', en: 'Spin' },

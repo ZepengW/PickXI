@@ -19,10 +19,10 @@ export default function Wheel({ options, onLanded, disabled }: WheelProps) {
   const { lang, t } = useLang();
   const [spinning, setSpinning] = useState(false);
   const [offset, setOffset] = useState(0);
-  const [snapping, setSnapping] = useState(false);
   const targetRef = useRef<number | null>(null);
   const offsetRef = useRef(0);
   const viewportRef = useRef<HTMLDivElement>(null);
+  const landedRef = useRef(false); // guard against double-callback
 
   const period = options.length * TILE_W;
 
@@ -36,11 +36,9 @@ export default function Wheel({ options, onLanded, disabled }: WheelProps) {
   function spin() {
     if (spinning || strip.length === 0 || disabled || period === 0) return;
     setSpinning(true);
-    setSnapping(false);
+    landedRef.current = false;
 
-    // Marker is at the viewport's horizontal centre (it's an absolute child
-    // of the viewport div, positioned at left-1/2). Measure the actual
-    // viewport width so we align the target tile's centre to the marker.
+    // Marker is at the viewport's horizontal centre.
     const viewportWidth = viewportRef.current?.offsetWidth ?? TILE_W;
     const viewportCentre = viewportWidth / 2;
 
@@ -49,7 +47,6 @@ export default function Wheel({ options, onLanded, disabled }: WheelProps) {
     targetRef.current = targetIdx;
 
     // Tile i's centre in strip coords = i * TILE_W + TILE_CONTENT_W / 2.
-    // (Tile i left edge = i * TILE_W; content width = TILE_CONTENT_W.)
     const targetTileCentre = targetIdx * TILE_W + TILE_CONTENT_W / 2;
 
     // We want: targetTileCentre + offset = viewportCentre
@@ -67,22 +64,17 @@ export default function Wheel({ options, onLanded, disabled }: WheelProps) {
   }
 
   function handleRest() {
-    if (spinning) {
+    if (spinning && !landedRef.current) {
+      landedRef.current = true;
       setSpinning(false);
       const idx = targetRef.current;
       if (idx != null) {
         const landed = strip[idx];
         if (landed) onLanded(landed.clubId, landed.season);
       }
-      // Snap offset back into first period range (instant, visually identical
-      // because the strip repeats every `period` px).
-      const snapped = ((offsetRef.current % period) + period) % period - period;
-      offsetRef.current = snapped;
-      setSnapping(true);
-      setOffset(snapped);
-      return;
+      // Do NOT snap back — keep the wheel at the landed position.
+      // The strip has 5 copies so there's plenty of room for future spins.
     }
-    if (snapping) setSnapping(false);
   }
 
   if (options.length === 0) {
@@ -120,11 +112,7 @@ export default function Wheel({ options, onLanded, disabled }: WheelProps) {
           className="flex"
           style={{ gap: `${GAP}px` }}
           animate={{ x: offset }}
-          transition={
-            snapping
-              ? { duration: 0 }
-              : { duration: 4.4, ease: [0.12, 0.8, 0.16, 1] }
-          }
+          transition={{ duration: 4.4, ease: [0.12, 0.8, 0.16, 1] }}
           onAnimationComplete={handleRest}
         >
           {strip.map((item) => {

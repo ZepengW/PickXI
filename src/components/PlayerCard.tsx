@@ -35,6 +35,7 @@ interface PlayerCardProps {
   disabled?: boolean;
   showRatings?: boolean;
   hideTier?: boolean;
+  showNationality?: boolean;
   compact?: boolean;
 }
 
@@ -45,6 +46,7 @@ export default function PlayerCard({
   disabled,
   showRatings = true,
   hideTier = false,
+  showNationality = true,
   compact = false,
 }: PlayerCardProps) {
   const { lang, t } = useLang();
@@ -85,8 +87,8 @@ export default function PlayerCard({
           {lang === 'zh' ? player.nameZh : player.name}
         </div>
         <div className="text-xs text-ink-400 truncate mt-1">
-          {lang === 'zh' ? player.nationalityZh : player.nationality}
-          {player.number ? ` · #${player.number}` : ''}
+          {showNationality && (lang === 'zh' ? player.nationalityZh : player.nationality)}
+          {showNationality && player.number ? ` · #${player.number}` : ''}
         </div>
 
         {/* Attributes */}

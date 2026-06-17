@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import type { Lang, Player, SimResult, SquadSlot } from '../types';
+import type { Difficulty, Lang, Player, SimResult, SquadSlot } from '../types';
+import { DIFFICULTY_CONFIGS } from '../types';
 import { getFormation, availableSeasons, getCompetition } from '../data';
 import { simulateSeason, positionFit } from '../engine/simulation';
 
@@ -19,8 +20,9 @@ interface GameState {
   formationId: string;
   seasonFrom: string;
   seasonTo: string;
-  showRatings: boolean;
-  hideTier: boolean;
+  difficulty: Difficulty;
+  /** Opponent season — if set, sim uses all clubs from this season as opponents. */
+  opponentSeason: string;
 
   // run state (not persisted)
   phase: Phase;
@@ -39,8 +41,8 @@ interface GameState {
   setCompetition: (id: string) => void;
   setFormation: (id: string) => void;
   setSeasonRange: (from: string, to: string) => void;
-  setShowRatings: (show: boolean) => void;
-  setHideTier: (hide: boolean) => void;
+  setDifficulty: (d: Difficulty) => void;
+  setOpponentSeason: (s: string) => void;
 
   startDraft: () => void;
   doSpin: (clubId: string, season: string) => void;
@@ -72,8 +74,7 @@ function emptySlots(formationId: string): SquadSlot[] {
 
 /**
  * Try to auto-place drafted players into a new formation's slots.
- * Returns the new slots and any players that couldn't be placed (bench).
- * Now any player can play any position — players without a primary/secondary slot
+ * Any player can play any position — players without a primary/secondary slot
  * will be placed in remaining empty slots as 'other'.
  */
 function autoPlace(
@@ -89,11 +90,9 @@ function autoPlace(
   }));
   const bench: Player[] = [];
 
-  // Sort players by rating descending — try to place best players first.
   const sorted = [...players].sort((a, b) => b.rating - a.rating);
 
   for (const player of sorted) {
-    // Try primary position first.
     let placed = false;
     for (const slot of slots) {
       if (slot.player) continue;
@@ -106,7 +105,6 @@ function autoPlace(
     }
     if (placed) continue;
 
-    // Try secondary position.
     for (const slot of slots) {
       if (slot.player) continue;
       if (positionFit(player, slot.position) === 'secondary') {
@@ -118,7 +116,6 @@ function autoPlace(
     }
     if (placed) continue;
 
-    // Fall back to any empty slot — any player can play any position.
     for (const slot of slots) {
       if (slot.player) continue;
       slot.player = player;
@@ -141,8 +138,8 @@ export const useGame = create<GameState>()(
       formationId: '433',
       seasonFrom: '1992-93',
       seasonTo: '2024-25',
-      showRatings: true,
-      hideTier: false,
+      difficulty: 'easy',
+      opponentSeason: '',
 
       phase: 'setup',
       slots: emptySlots('433'),
@@ -164,6 +161,7 @@ export const useGame = create<GameState>()(
           competitionId: id,
           seasonFrom: from,
           seasonTo: to,
+          opponentSeason: to,
           slots: emptySlots(get().formationId),
           draftedIds: [],
           bench: [],
@@ -173,20 +171,16 @@ export const useGame = create<GameState>()(
       },
       setFormation: (id) => {
         const state = get();
-        // Collect all currently placed players.
         const placedPlayers = state.slots
           .filter((s) => s.player !== null)
           .map((s) => s.player!) as Player[];
-        // Combine with bench players.
         const allPlayers = [...placedPlayers, ...state.bench];
 
         if (allPlayers.length === 0) {
-          // No players drafted — just switch formation.
           set({ formationId: id, slots: emptySlots(id) });
           return;
         }
 
-        // Auto-place players into the new formation.
         const { slots, bench } = autoPlace(id, allPlayers);
         set({
           formationId: id,
@@ -196,8 +190,8 @@ export const useGame = create<GameState>()(
         });
       },
       setSeasonRange: (from, to) => set({ seasonFrom: from, seasonTo: to }),
-      setShowRatings: (show) => set({ showRatings: show }),
-      setHideTier: (hide) => set({ hideTier: hide }),
+      setDifficulty: (d) => set({ difficulty: d }),
+      setOpponentSeason: (s) => set({ opponentSeason: s }),
 
       startDraft: () =>
         set({
@@ -224,17 +218,14 @@ export const useGame = create<GameState>()(
         const slot = slots.find((s) => s.slotId === slotId);
         if (!slot) return;
 
-        // Any player can play any position — only the score differs.
         const fit = positionFit(pendingPlayer, slot.position);
 
-        // If player already placed elsewhere, remove from old slot first.
         const newSlots = slots.map((s) => {
           if (s.player?.id === pendingPlayer.id) return { ...s, player: null, positionFit: null };
           if (s.slotId === slotId) return { ...s, player: pendingPlayer, positionFit: fit };
           return s;
         });
 
-        // If the target slot had a player, they go to the bench.
         const displaced = slot.player;
         const newBench = displaced ? [...get().bench, displaced] : get().bench;
 
@@ -281,10 +272,8 @@ export const useGame = create<GameState>()(
         const slot = slots.find((s) => s.slotId === slotId);
         if (!slot) return;
 
-        // Any player can play any position — only the score differs.
         const fit = positionFit(player, slot.position);
 
-        // If target slot had a player, they go to bench.
         const displaced = slot.player;
         const newBench = [
           ...bench.filter((p) => p.id !== player.id),
@@ -300,8 +289,8 @@ export const useGame = create<GameState>()(
       },
 
       runSim: () => {
-        const { competitionId, slots } = get();
-        const result = simulateSeason(competitionId, slots);
+        const { competitionId, slots, opponentSeason } = get();
+        const result = simulateSeason(competitionId, slots, opponentSeason || undefined);
         set({ phase: 'results', result });
       },
 
@@ -318,7 +307,6 @@ export const useGame = create<GameState>()(
         }),
 
       restartAll: () => {
-        // Clear persisted state and reset to defaults.
         localStorage.removeItem('dreamxi-store');
         set({
           lang: 'zh',
@@ -327,8 +315,8 @@ export const useGame = create<GameState>()(
           formationId: '433',
           seasonFrom: '1992-93',
           seasonTo: '2024-25',
-          showRatings: true,
-          hideTier: false,
+          difficulty: 'easy',
+          opponentSeason: '',
           phase: 'setup',
           slots: emptySlots('433'),
           draftedIds: [],
@@ -351,8 +339,8 @@ export const useGame = create<GameState>()(
         formationId: s.formationId,
         seasonFrom: s.seasonFrom,
         seasonTo: s.seasonTo,
-        showRatings: s.showRatings,
-        hideTier: s.hideTier,
+        difficulty: s.difficulty,
+        opponentSeason: s.opponentSeason,
       }),
       onRehydrateStorage: () => (state) => {
         if (state) {
@@ -370,4 +358,9 @@ export function filledCount(slots: SquadSlot[]): number {
 
 export function isComplete(slots: SquadSlot[]): boolean {
   return filledCount(slots) === 11;
+}
+
+/** Get the difficulty config for the current difficulty level. */
+export function difficultyConfig(d: Difficulty) {
+  return DIFFICULTY_CONFIGS[d];
 }

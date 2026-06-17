@@ -8,7 +8,7 @@ import type {
   SimResult,
   SquadSlot,
 } from '../types';
-import { CLUB_MAP, getCompetition } from '../data';
+import { CLUB_MAP, getCompetition, ALL_PLAYERS } from '../data';
 
 // ---- Position weighting & grouping -----------------------------------------
 
@@ -200,10 +200,14 @@ function poisson(lambda: number): number {
  *   user's final position is computed.
  * - Cup: plays `matches` single-leg knockout-style games against progressively
  *   stronger opponents; each defeat ends the run early.
+ *
+ * If `opponentSeason` is provided, opponents are drawn from clubs that have
+ * players in that specific season (giving a realistic era-appropriate pool).
  */
 export function simulateSeason(
   competitionId: string,
   slots: SquadSlot[],
+  opponentSeason?: string,
   rng: () => number = Math.random,
 ): SimResult {
   const comp = getCompetition(competitionId);
@@ -212,9 +216,21 @@ export function simulateSeason(
   const { overall, attack, defence } = teamStrength(slots);
 
   // Build opponent pool from the competition's clubs.
-  const oppClubs: Club[] = Object.values(CLUB_MAP).filter(
+  let oppClubs: Club[] = Object.values(CLUB_MAP).filter(
     (c) => c.competitionId === competitionId,
   );
+
+  // If opponentSeason is specified, filter to clubs that have players in that season.
+  if (opponentSeason) {
+    const clubIdsWithPlayers = new Set(
+      ALL_PLAYERS
+        .filter((p) => p.competitionId === competitionId && p.season === opponentSeason)
+        .map((p) => p.clubId),
+    );
+    const filtered = oppClubs.filter((c) => clubIdsWithPlayers.has(c.id));
+    if (filtered.length > 0) oppClubs = filtered;
+  }
+
   const opponentPool =
     oppClubs.length > 0 ? oppClubs : Object.values(CLUB_MAP).slice(0, 10);
 
