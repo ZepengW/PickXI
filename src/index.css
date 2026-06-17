@@ -2,19 +2,52 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
+/* ===== Theme color variables ===== */
+/* Dark theme (default) */
+:root,
+.dark {
+  --color-ink-950: #07080c;
+  --color-ink-900: #0c0e14;
+  --color-ink-800: #14171f;
+  --color-ink-700: #1d212b;
+  --color-ink-600: #2a2f3c;
+  --color-ink-500: #3a4050;
+  --color-ink-400: #5a6172;
+  --color-ink-300: #8b93a4;
+  --color-ink-200: #b8becc;
+  --color-ink-100: #e6e8ee;
+  --bg-base: #07080c;
+  --text-base: #e6e8ee;
   color-scheme: dark;
+}
+
+/* Light theme */
+.light {
+  --color-ink-950: #f8f9fb;
+  --color-ink-900: #ffffff;
+  --color-ink-800: #f1f3f7;
+  --color-ink-700: #e2e6ee;
+  --color-ink-600: #cdd3df;
+  --color-ink-500: #a8b0c2;
+  --color-ink-400: #6b7384;
+  --color-ink-300: #4a5263;
+  --color-ink-200: #2e3441;
+  --color-ink-100: #1a1e28;
+  --bg-base: #f8f9fb;
+  --text-base: #1a1e28;
+  color-scheme: light;
 }
 
 html,
 body {
   margin: 0;
-  background: #07080c;
-  color: #e6e8ee;
+  background: var(--bg-base);
+  color: var(--text-base);
   font-family: 'Inter', system-ui, sans-serif;
   font-size: 16px;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  transition: background-color 0.2s ease, color 0.2s ease;
 }
 
 #root {
@@ -44,14 +77,14 @@ body {
   height: 10px;
 }
 ::-webkit-scrollbar-track {
-  background: #0c0e14;
+  background: var(--color-ink-900);
 }
 ::-webkit-scrollbar-thumb {
-  background: #2a2f3c;
+  background: var(--color-ink-600);
   border-radius: 6px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #3a4050;
+  background: var(--color-ink-500);
 }
 
 /* Pitch texture */

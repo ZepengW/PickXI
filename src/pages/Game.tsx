@@ -15,7 +15,8 @@ import {
   playersForClubSeason,
 } from '../data';
 import { teamStrength } from '../engine/simulation';
-import type { Player } from '../types';
+import type { Player, SquadSlot } from '../types';
+import type { StringKey } from '../i18n/strings';
 
 export default function Game() {
   const game = useGame();
@@ -51,7 +52,7 @@ export default function Game() {
 function SetupView() {
   const { lang, t } = useLang();
   const game = useGame();
-  const { competitionId, formationId, seasonFrom, seasonTo, showRatings } = game;
+  const { competitionId, formationId, seasonFrom, seasonTo, showRatings, hideTier } = game;
   const seasons = availableSeasons(competitionId);
 
   const safeFrom = seasons.includes(seasonFrom) ? seasonFrom : seasons[0] ?? '';
@@ -65,7 +66,7 @@ function SetupView() {
       className="mx-auto max-w-5xl px-5 sm:px-8 py-8 w-full"
     >
       <div className="flex items-center justify-between mb-8">
-        <h1 className="font-display font-black text-3xl sm:text-4xl tracking-tightest text-white">
+        <h1 className="font-display font-black text-3xl sm:text-4xl tracking-tightest text-ink-100">
           {t('setupTitle')}
         </h1>
         <button
@@ -92,7 +93,7 @@ function SetupView() {
               <div className="text-[10px] font-mono text-ink-400 mb-0.5">
                 {lang === 'zh' ? c.regionZh : c.region}
               </div>
-              <div className="font-display font-bold text-sm text-white leading-tight">
+              <div className="font-display font-bold text-sm text-ink-100 leading-tight">
                 {lang === 'zh' ? c.nameZh : c.name}
               </div>
               <div className="text-[10px] font-mono text-ink-500 mt-1">
@@ -129,7 +130,7 @@ function SetupView() {
             value={safeFrom}
             onChange={(e) => game.setSeasonRange(e.target.value, safeTo)}
             aria-label={t('eraFrom')}
-            className="bg-ink-900 border border-ink-700 rounded-lg px-4 py-2.5 text-sm text-white font-mono focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:border-accent"
+            className="bg-ink-900 border border-ink-700 rounded-lg px-4 py-2.5 text-sm text-ink-100 font-mono focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:border-accent"
           >
             {seasons.map((s) => (
               <option key={s} value={s}>{s}</option>
@@ -140,7 +141,7 @@ function SetupView() {
             value={safeTo}
             onChange={(e) => game.setSeasonRange(safeFrom, e.target.value)}
             aria-label={t('eraTo')}
-            className="bg-ink-900 border border-ink-700 rounded-lg px-4 py-2.5 text-sm text-white font-mono focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:border-accent"
+            className="bg-ink-900 border border-ink-700 rounded-lg px-4 py-2.5 text-sm text-ink-100 font-mono focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:border-accent"
           >
             {seasons.map((s) => (
               <option key={s} value={s}>{s}</option>
@@ -152,29 +153,50 @@ function SetupView() {
         </div>
       </Section>
 
-      {/* Ratings toggle */}
-      <Section label={t('draftMode')}>
-        <div className="flex gap-2">
-          <button
-            onClick={() => game.setShowRatings(true)}
-            className={`px-5 py-2.5 rounded-full text-sm font-medium border transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
-              showRatings
-                ? 'border-accent bg-accent/10 text-accent'
-                : 'border-ink-700 text-ink-300 hover:border-ink-500'
-            }`}
-          >
-            {t('showRatings')}
-          </button>
-          <button
-            onClick={() => game.setShowRatings(false)}
-            className={`px-5 py-2.5 rounded-full text-sm font-medium border transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
-              !showRatings
-                ? 'border-accent bg-accent/10 text-accent'
-                : 'border-ink-700 text-ink-300 hover:border-ink-500'
-            }`}
-          >
-            {t('hideRatings')}
-          </button>
+      {/* Difficulty */}
+      <Section label={t('difficulty')}>
+        <div className="space-y-3">
+          {/* Show/Hide ratings */}
+          <div className="flex gap-2">
+            <button
+              onClick={() => game.setShowRatings(true)}
+              className={`px-5 py-2.5 rounded-full text-sm font-medium border transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
+                showRatings
+                  ? 'border-accent bg-accent/10 text-accent'
+                  : 'border-ink-700 text-ink-300 hover:border-ink-500'
+              }`}
+            >
+              {t('showRatings')}
+            </button>
+            <button
+              onClick={() => game.setShowRatings(false)}
+              className={`px-5 py-2.5 rounded-full text-sm font-medium border transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
+                !showRatings
+                  ? 'border-accent bg-accent/10 text-accent'
+                  : 'border-ink-700 text-ink-300 hover:border-ink-500'
+              }`}
+            >
+              {t('hideRatings')}
+            </button>
+          </div>
+          {/* Hide tier colors */}
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => game.setHideTier(!hideTier)}
+              className={`px-5 py-2.5 rounded-full text-sm font-medium border transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
+                hideTier
+                  ? 'border-accent bg-accent/10 text-accent'
+                  : 'border-ink-700 text-ink-300 hover:border-ink-500'
+              }`}
+            >
+              {t('hideTier')}
+            </button>
+            <span className="text-xs text-ink-500">
+              {lang === 'zh'
+                ? '隐藏球员等级颜色，所有球员卡片使用统一配色'
+                : 'Hide tier color coding; all player cards use the same neutral color'}
+            </span>
+          </div>
         </div>
       </Section>
 
@@ -203,6 +225,7 @@ function DraftView() {
     seasonFrom,
     seasonTo,
     showRatings,
+    hideTier,
     slots,
     draftedIds,
     spin,
@@ -343,11 +366,11 @@ function DraftView() {
           <p className="text-sm text-ink-500 text-center">
             {pendingPlayer
               ? lang === 'zh'
-                ? `将 ${pendingPlayer.nameZh} 放到高亮位置。绿色=最佳，黄色=可踢(-5)`
-                : `Place ${pendingPlayer.name} on a highlighted slot. Green=primary, Yellow=secondary(-5)`
+                ? `将 ${pendingPlayer.nameZh} 放到任意位置。绿色=最佳，黄色=可踢(-5)，橙色=客串(-15)`
+                : `Place ${pendingPlayer.name} anywhere. Green=primary, Yellow=secondary(-5), Orange=out of position(-15)`
               : lang === 'zh'
-                ? '转盘→选球员→放到可踢位置。点击已放球员可移除。'
-                : 'Spin → pick → place on a valid slot. Tap a placed player to remove.'}
+                ? '转盘→选球员→放到任意位置。点击已放球员可移除。'
+                : 'Spin → pick → place anywhere. Tap a placed player to remove.'}
           </p>
 
           {/* Bench */}
@@ -374,7 +397,7 @@ function DraftView() {
                 exit={{ opacity: 0 }}
                 className="flex flex-col items-center justify-center flex-1"
               >
-                <h2 className="font-display font-bold text-lg text-white mb-3">
+                <h2 className="font-display font-bold text-lg text-ink-100 mb-3">
                   {lang === 'zh' ? '放置球员' : 'Place Player'}
                 </h2>
                 <div className="inline-flex flex-col items-center gap-2 p-5 rounded-xl border border-accent/40 bg-accent/5">
@@ -383,7 +406,7 @@ function DraftView() {
                       {pendingPlayer.rating}
                     </div>
                   )}
-                  <div className="font-bold text-white text-lg">
+                  <div className="font-bold text-ink-100 text-lg">
                     {lang === 'zh' ? pendingPlayer.nameZh : pendingPlayer.name}
                   </div>
                   <div className="text-xs text-ink-400 font-mono">
@@ -428,7 +451,7 @@ function DraftView() {
                 className="flex flex-col flex-1"
               >
                 <div className="mb-3">
-                  <h2 className="font-display font-bold text-lg text-white">{t('spin')}</h2>
+                  <h2 className="font-display font-bold text-lg text-ink-100">{t('spin')}</h2>
                   <p className="text-xs text-ink-400">
                     {lang === 'zh'
                       ? '转动转盘，随机获得一支球队和一个赛季。'
@@ -456,6 +479,7 @@ function DraftView() {
                   onPick={(player) => game.pickPlayer(player)}
                   draftedIds={draftedSet}
                   showRatings={showRatings}
+                  hideTier={hideTier}
                   clubId={spin.clubId}
                   season={spin.season}
                 />
@@ -483,7 +507,7 @@ function StrengthBars({
   t,
 }: {
   strength: { overall: number; attack: number; midfield: number; defence: number };
-  t: (key: any) => string;
+  t: (key: StringKey) => string;
 }) {
   const bars = [
     { label: t('overall'), value: strength.overall, color: 'bg-accent' },
@@ -497,7 +521,7 @@ function StrengthBars({
         <div key={b.label} className="rounded-lg border border-ink-800 bg-ink-900/40 p-3">
           <div className="text-xs text-ink-400 font-mono uppercase mb-1">{b.label}</div>
           <div className="flex items-baseline gap-1.5">
-            <span className="font-display font-black text-2xl text-white tabular-nums">
+            <span className="font-display font-black text-2xl text-ink-100 tabular-nums">
               {Math.round(b.value)}
             </span>
           </div>
@@ -528,18 +552,15 @@ function Bench({
   bench: Player[];
   showRatings: boolean;
   onPlace: (player: Player, slotId: string) => void;
-  slots: any[];
+  slots: SquadSlot[];
   lang: string;
-  t: (key: any) => string;
+  t: (key: StringKey) => string;
 }) {
   const [selected, setSelected] = useState<Player | null>(null);
 
-  // Find valid slots for the selected bench player.
-  const validSlots = selected
-    ? slots.filter((s: any) => {
-        if (s.player) return false;
-        return selected.positions.includes(s.position);
-      })
+  // Any empty slot can accept any player (with different scores).
+  const emptySlots = selected
+    ? slots.filter((s) => !s.player)
     : [];
 
   return (
@@ -564,19 +585,19 @@ function Bench({
           </button>
         ))}
       </div>
-      {selected && validSlots.length > 0 && (
+      {selected && emptySlots.length > 0 && (
         <div className="mt-2 flex flex-wrap gap-1.5">
           <span className="text-xs text-ink-500 self-center">
             {lang === 'zh' ? '放入：' : 'Place at:'}
           </span>
-          {validSlots.map((s: any) => (
+          {emptySlots.map((s) => (
             <button
               key={s.slotId}
               onClick={() => {
                 onPlace(selected, s.slotId);
                 setSelected(null);
               }}
-              className="px-2.5 py-1 rounded-md text-xs font-mono border border-green-600/40 text-green-300 bg-green-600/10 hover:bg-green-600/20 transition-colors"
+              className="px-2.5 py-1 rounded-md text-xs font-mono border border-sky-600/40 text-sky-300 bg-sky-600/10 hover:bg-sky-600/20 transition-colors"
             >
               {s.position}
             </button>

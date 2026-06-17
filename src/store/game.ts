@@ -14,11 +14,13 @@ interface SpinResult {
 interface GameState {
   // settings (persisted)
   lang: Lang;
+  theme: 'light' | 'dark';
   competitionId: string;
   formationId: string;
   seasonFrom: string;
   seasonTo: string;
   showRatings: boolean;
+  hideTier: boolean;
 
   // run state (not persisted)
   phase: Phase;
@@ -33,10 +35,12 @@ interface GameState {
 
   // actions
   setLang: (lang: Lang) => void;
+  setTheme: (theme: 'light' | 'dark') => void;
   setCompetition: (id: string) => void;
   setFormation: (id: string) => void;
   setSeasonRange: (from: string, to: string) => void;
   setShowRatings: (show: boolean) => void;
+  setHideTier: (hide: boolean) => void;
 
   startDraft: () => void;
   doSpin: (clubId: string, season: string) => void;
@@ -69,6 +73,8 @@ function emptySlots(formationId: string): SquadSlot[] {
 /**
  * Try to auto-place drafted players into a new formation's slots.
  * Returns the new slots and any players that couldn't be placed (bench).
+ * Now any player can play any position — players without a primary/secondary slot
+ * will be placed in remaining empty slots as 'other'.
  */
 function autoPlace(
   formationId: string,
@@ -110,6 +116,16 @@ function autoPlace(
         break;
       }
     }
+    if (placed) continue;
+
+    // Fall back to any empty slot — any player can play any position.
+    for (const slot of slots) {
+      if (slot.player) continue;
+      slot.player = player;
+      slot.positionFit = 'other';
+      placed = true;
+      break;
+    }
     if (!placed) bench.push(player);
   }
 
@@ -120,11 +136,13 @@ export const useGame = create<GameState>()(
   persist(
     (set, get) => ({
       lang: 'zh',
+      theme: 'dark',
       competitionId: 'epl',
       formationId: '433',
       seasonFrom: '1992-93',
       seasonTo: '2024-25',
       showRatings: true,
+      hideTier: false,
 
       phase: 'setup',
       slots: emptySlots('433'),
@@ -136,6 +154,7 @@ export const useGame = create<GameState>()(
       result: null,
 
       setLang: (lang) => set({ lang }),
+      setTheme: (theme) => set({ theme }),
       setCompetition: (id) => {
         const seasons = availableSeasons(id);
         const comp = getCompetition(id);
@@ -178,6 +197,7 @@ export const useGame = create<GameState>()(
       },
       setSeasonRange: (from, to) => set({ seasonFrom: from, seasonTo: to }),
       setShowRatings: (show) => set({ showRatings: show }),
+      setHideTier: (hide) => set({ hideTier: hide }),
 
       startDraft: () =>
         set({
@@ -204,8 +224,8 @@ export const useGame = create<GameState>()(
         const slot = slots.find((s) => s.slotId === slotId);
         if (!slot) return;
 
+        // Any player can play any position — only the score differs.
         const fit = positionFit(pendingPlayer, slot.position);
-        if (!fit) return;
 
         // If player already placed elsewhere, remove from old slot first.
         const newSlots = slots.map((s) => {
@@ -261,14 +281,14 @@ export const useGame = create<GameState>()(
         const slot = slots.find((s) => s.slotId === slotId);
         if (!slot) return;
 
+        // Any player can play any position — only the score differs.
         const fit = positionFit(player, slot.position);
-        if (!fit) return;
 
         // If target slot had a player, they go to bench.
         const displaced = slot.player;
         const newBench = [
           ...bench.filter((p) => p.id !== player.id),
-          ...(displaced ? [displaced] : []),
+          ...(displaced ? [displaced] : [])
         ];
 
         set({
@@ -302,11 +322,13 @@ export const useGame = create<GameState>()(
         localStorage.removeItem('dreamxi-store');
         set({
           lang: 'zh',
+          theme: 'dark',
           competitionId: 'epl',
           formationId: '433',
           seasonFrom: '1992-93',
           seasonTo: '2024-25',
           showRatings: true,
+          hideTier: false,
           phase: 'setup',
           slots: emptySlots('433'),
           draftedIds: [],
@@ -324,11 +346,13 @@ export const useGame = create<GameState>()(
       name: 'dreamxi-store',
       partialize: (s) => ({
         lang: s.lang,
+        theme: s.theme,
         competitionId: s.competitionId,
         formationId: s.formationId,
         seasonFrom: s.seasonFrom,
         seasonTo: s.seasonTo,
         showRatings: s.showRatings,
+        hideTier: s.hideTier,
       }),
       onRehydrateStorage: () => (state) => {
         if (state) {

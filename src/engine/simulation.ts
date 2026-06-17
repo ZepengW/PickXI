@@ -59,19 +59,20 @@ export function positionGroup(pos: Position): PositionGroup {
  * Determine how well a player fits a slot position.
  * - 'primary': the slot position is the player's primary position
  * - 'secondary': the slot position is in the player's positions list but not primary
- * - null: cannot play this position
+ * - 'other': the player can play here but not ideally (out of position)
+ * Any player can play any position — only the rating penalty differs.
  */
-export function positionFit(player: Player, slotPosition: Position): 'primary' | 'secondary' | null {
+export function positionFit(player: Player, slotPosition: Position): 'primary' | 'secondary' | 'other' {
   if (player.position === slotPosition) return 'primary';
   if (player.positions.includes(slotPosition)) return 'secondary';
-  return null;
+  return 'other';
 }
 
-/** Rating penalty applied when a player is out of their primary position. */
-export function positionPenalty(fit: 'primary' | 'secondary' | null): number {
+/** Rating penalty applied when a player is out of position. */
+export function positionPenalty(fit: 'primary' | 'secondary' | 'other' | null): number {
   if (fit === 'primary') return 0;
   if (fit === 'secondary') return 5;
-  return 15; // shouldn't happen — placement is gated by the UI
+  return 15; // 'other' or null (treated as out of position)
 }
 
 // ---- Team strength ----------------------------------------------------------

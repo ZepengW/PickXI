@@ -164,7 +164,7 @@ export default function Home() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.6 }}
-            className="font-display font-black text-4xl sm:text-6xl tracking-tightest text-white mb-16"
+            className="font-display font-black text-4xl sm:text-6xl tracking-tightest text-ink-100 mb-16"
           >
             {t('howTitle')}
           </motion.h2>
@@ -184,7 +184,7 @@ export default function Home() {
                 className="bg-ink-900 p-7 sm:p-8 group hover:bg-ink-800 transition-colors"
               >
                 <div className="font-mono text-accent text-sm font-bold mb-6">{s.n}</div>
-                <h3 className="font-display font-bold text-xl text-white mb-2">
+                <h3 className="font-display font-bold text-xl text-ink-100 mb-2">
                   {s.title}
                 </h3>
                 <p className="text-sm text-ink-300 leading-relaxed">{s.body}</p>
@@ -204,7 +204,7 @@ export default function Home() {
             transition={{ duration: 0.6 }}
             className="mb-14 max-w-2xl"
           >
-            <h2 className="font-display font-black text-4xl sm:text-6xl tracking-tightest text-white mb-4">
+            <h2 className="font-display font-black text-4xl sm:text-6xl tracking-tightest text-ink-100 mb-4">
               {t('compsTitle')}
             </h2>
             <p className="text-lg text-ink-300">{t('compsSub')}</p>
@@ -223,7 +223,7 @@ export default function Home() {
                   to="/game"
                   onClick={() => setCompetition(c.id)}
                   className="block relative overflow-hidden rounded-2xl border border-ink-700 hover:border-ink-500 transition-colors group h-full"
-                  style={{ background: `linear-gradient(160deg, ${c.accent}33, #0c0e14 60%)` }}
+                  style={{ background: `linear-gradient(160deg, ${c.accent}33, var(--color-ink-900) 60%)` }}
                 >
                   <div
                     className="absolute -top-10 -right-10 w-40 h-40 rounded-full opacity-20 blur-2xl group-hover:opacity-40 transition-opacity"
@@ -235,7 +235,7 @@ export default function Home() {
                         <div className="text-xs font-mono text-ink-400 mb-1">
                           {lang === 'zh' ? c.regionZh : c.region}
                         </div>
-                        <h3 className="font-display font-black text-2xl text-white">
+                        <h3 className="font-display font-black text-2xl text-ink-100">
                           {lang === 'zh' ? c.nameZh : c.name}
                         </h3>
                       </div>
@@ -279,7 +279,7 @@ export default function Home() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.6 }}
-            className="font-display font-black text-4xl sm:text-6xl tracking-tightest text-white mb-12"
+            className="font-display font-black text-4xl sm:text-6xl tracking-tightest text-ink-100 mb-12"
           >
             {t('challengesTitle')}
           </motion.h2>
@@ -316,7 +316,7 @@ export default function Home() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.6 }}
-            className="font-display font-black text-4xl sm:text-6xl tracking-tightest text-white mb-6"
+            className="font-display font-black text-4xl sm:text-6xl tracking-tightest text-ink-100 mb-6"
           >
             {lang === 'zh' ? '能组建最强十一人吗？' : 'Can you build the ultimate XI?'}
           </motion.h2>

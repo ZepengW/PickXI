@@ -10,6 +10,7 @@ interface SquadPickerProps {
   onPick: (player: Player) => void;
   draftedIds: Set<string>;
   showRatings: boolean;
+  hideTier: boolean;
   clubId: string;
   season: string;
 }
@@ -19,6 +20,7 @@ export default function SquadPicker({
   onPick,
   draftedIds,
   showRatings,
+  hideTier,
   clubId,
   season,
 }: SquadPickerProps) {
@@ -40,7 +42,7 @@ export default function SquadPicker({
           {club ? (lang === 'zh' ? club.shortNameZh.slice(0, 2) : club.shortName.slice(0, 3)) : ''}
         </div>
         <div>
-          <div className="font-display font-bold text-lg text-white">
+          <div className="font-display font-bold text-lg text-ink-100">
             {club ? (lang === 'zh' ? club.nameZh : club.name) : ''}
           </div>
           <div className="text-xs font-mono text-ink-400">{season}</div>
@@ -49,8 +51,8 @@ export default function SquadPicker({
 
       <div className="mb-3 text-xs text-ink-300">
         {lang === 'zh'
-          ? '选择一名球员，然后将他放到球场上可踢的位置。'
-          : 'Pick a player, then place them on a valid pitch slot.'}
+          ? '选择一名球员，然后将他放到球场上任意位置（不同位置有不同分数加成）。'
+          : 'Pick a player, then place them anywhere on the pitch (different positions give different score bonuses).'}
       </div>
 
       {sorted.length === 0 ? (
@@ -72,6 +74,7 @@ export default function SquadPicker({
                   <PlayerCard
                     player={player}
                     showRatings={showRatings}
+                    hideTier={hideTier}
                     disabled={drafted}
                     onClick={() => !drafted && onPick(player)}
                   />

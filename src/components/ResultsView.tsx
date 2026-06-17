@@ -66,7 +66,7 @@ export default function ResultsView({
               {result.grade}
             </div>
           </div>
-          <h1 className="font-display font-black text-4xl sm:text-6xl tracking-tightest text-white mb-3">
+          <h1 className="font-display font-black text-4xl sm:text-6xl tracking-tightest text-ink-100 mb-3">
             {champ
               ? zh ? '冠军！' : 'Champions!'
               : `${zh ? '第' : '#'}${result.position}${zh ? '名' : ''}`}
@@ -182,7 +182,7 @@ export default function ResultsView({
         {/* Match-by-match */}
         <div className="rounded-2xl border border-ink-800 overflow-hidden">
           <div className="px-5 py-3 border-b border-ink-800 flex items-center justify-between">
-            <span className="font-display font-bold text-sm text-white">
+            <span className="font-display font-bold text-sm text-ink-100">
               {zh ? '逐场战报' : 'Match by Match'}
             </span>
             <span className="text-xs font-mono text-ink-400">
@@ -218,7 +218,7 @@ export default function ResultsView({
                   <span className="flex-1 text-sm text-ink-200 truncate">
                     {zh ? m.opponentNameZh : m.opponentName}
                   </span>
-                  <span className="font-mono font-bold text-sm text-white tabular-nums">
+                  <span className="font-mono font-bold text-sm text-ink-100 tabular-nums">
                     {m.goalsFor}-{m.goalsAgainst}
                   </span>
                 </motion.div>
@@ -282,7 +282,7 @@ function StatBox({
       </div>
       <div
         className={`font-display font-black text-3xl sm:text-4xl tabular-nums ${
-          highlight ? 'text-accent' : 'text-white'
+          highlight ? 'text-accent' : 'text-ink-100'
         }`}
       >
         {value}

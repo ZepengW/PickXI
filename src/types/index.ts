@@ -97,8 +97,8 @@ export interface SquadSlot {
   slotId: string;
   position: Position;
   player: Player | null;
-  /** How well the player fits this slot: 'primary' | 'secondary' | null. */
-  positionFit: 'primary' | 'secondary' | null;
+  /** How well the player fits this slot. null = empty slot. */
+  positionFit: 'primary' | 'secondary' | 'other' | null;
 }
 
 export interface MatchResult {

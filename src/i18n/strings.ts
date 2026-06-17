@@ -62,6 +62,7 @@ export const STRINGS = {
   difficulty: { zh: '难度', en: 'Difficulty' },
   showRatings: { zh: '显示评分', en: 'Show ratings' },
   hideRatings: { zh: '隐藏评分（困难）', en: 'Hide ratings (hard)' },
+  hideTier: { zh: '隐藏等级颜色（困难）', en: 'Hide tier colors (hard)' },
   draftMode: { zh: '选秀模式', en: 'Draft mode' },
   era: { zh: '时代范围', en: 'Era' },
   eraHint: {

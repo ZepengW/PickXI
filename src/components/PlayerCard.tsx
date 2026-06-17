@@ -34,6 +34,7 @@ interface PlayerCardProps {
   selected?: boolean;
   disabled?: boolean;
   showRatings?: boolean;
+  hideTier?: boolean;
   compact?: boolean;
 }
 
@@ -43,10 +44,14 @@ export default function PlayerCard({
   selected,
   disabled,
   showRatings = true,
+  hideTier = false,
   compact = false,
 }: PlayerCardProps) {
   const { lang, t } = useLang();
   const tier = ratingTier(player.rating);
+  // When hideTier is on, use a neutral background regardless of rating.
+  const headerBg = hideTier ? 'from-ink-600 to-ink-700' : tier.bg;
+  const headerText = hideTier ? 'text-ink-100' : tier.text;
 
   return (
     <motion.button
@@ -62,9 +67,9 @@ export default function PlayerCard({
       } ${disabled ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'}`}
     >
       {/* Rating header */}
-      <div className={`bg-gradient-to-r ${tier.bg} px-3 py-2.5 flex items-center justify-between`}>
+      <div className={`bg-gradient-to-r ${headerBg} px-3 py-2.5 flex items-center justify-between`}>
         {showRatings ? (
-          <span className={`font-mono font-black text-xl ${tier.text}`}>{player.rating}</span>
+          <span className={`font-mono font-black text-xl ${headerText}`}>{player.rating}</span>
         ) : (
           <span className="font-mono font-black text-xl text-white/70">??</span>
         )}

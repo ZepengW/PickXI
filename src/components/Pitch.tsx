@@ -1,26 +1,8 @@
 import { motion } from 'framer-motion';
-import type { Player, Position, SquadSlot } from '../types';
+import type { Player, SquadSlot } from '../types';
 import { getFormation } from '../data';
 import { useLang } from '../i18n/useLang';
 import { positionGroup, positionFit } from '../engine/simulation';
-
-const POS_LABEL: Record<Position, { zh: string; en: string }> = {
-  GK: { zh: '门将', en: 'GK' },
-  CB: { zh: '中卫', en: 'CB' },
-  LB: { zh: '左后卫', en: 'LB' },
-  RB: { zh: '右后卫', en: 'RB' },
-  LWB: { zh: '左翼卫', en: 'LWB' },
-  RWB: { zh: '右翼卫', en: 'RWB' },
-  CDM: { zh: '后腰', en: 'CDM' },
-  CM: { zh: '中前卫', en: 'CM' },
-  CAM: { zh: '前腰', en: 'CAM' },
-  LM: { zh: '左前卫', en: 'LM' },
-  RM: { zh: '右前卫', en: 'RM' },
-  LW: { zh: '左边锋', en: 'LW' },
-  RW: { zh: '右边锋', en: 'RW' },
-  ST: { zh: '前锋', en: 'ST' },
-  CF: { zh: '影锋', en: 'CF' },
-};
 
 const GROUP_COLOR: Record<string, string> = {
   GK: '#f5c542',
@@ -62,63 +44,63 @@ export default function Pitch({
       }`}
     >
       {/*
-        Pitch markings drawn in the SAME coordinate system as formation slots:
-        x: 0-100 (left→right), y: 0-100 (own goal at bottom→attacking goal at top).
-        SVG y-axis is flipped via transform so y=0 is at the bottom.
-        This guarantees perfect alignment between markings and player tokens.
+        Pitch markings drawn in screen coordinates (y=0 at top, y=100 at bottom).
+        Formation coords have y=0 at own goal (bottom) and y=100 at attacking goal (top),
+        so slots use top = (100 - fs.y)% to convert to screen coordinates.
+        No flip transform needed — markings and slots use the same screen space.
       */}
       <svg
         viewBox="0 0 100 100"
         className="absolute inset-0 w-full h-full"
         preserveAspectRatio="none"
-        style={{ transform: 'scaleY(-1)' }}
       >
         <g fill="none" stroke="rgba(255,255,255,0.3)" strokeWidth="0.5">
           {/* Outer boundary */}
           <rect x="4" y="4" width="92" height="92" />
-          {/* Halfway line */}
+          {/* Halfway line (screen y=50) */}
           <line x1="4" y1="50" x2="96" y2="50" />
           {/* Centre circle */}
           <circle cx="50" cy="50" r="9" />
           {/* Centre spot */}
           <circle cx="50" cy="50" r="0.8" fill="rgba(255,255,255,0.4)" />
 
-          {/* Attacking goal area (top, y near 100) */}
-          <rect x="20" y="80" width="60" height="16" />
-          {/* Attacking 6-yard box */}
-          <rect x="37" y="92" width="26" height="4" />
-          {/* Attacking penalty arc */}
-          <path d="M 38 80 A 9 9 0 0 1 62 80" />
-
-          {/* Own goal area (bottom, y near 0) */}
+          {/* Attacking goal area (top of screen, y=4-20) */}
           <rect x="20" y="4" width="60" height="16" />
-          {/* Own 6-yard box */}
+          {/* Attacking 6-yard box */}
           <rect x="37" y="4" width="26" height="4" />
-          {/* Own penalty arc */}
+          {/* Attacking penalty arc */}
           <path d="M 38 20 A 9 9 0 0 0 62 20" />
+
+          {/* Own goal area (bottom of screen, y=80-96) */}
+          <rect x="20" y="80" width="60" height="16" />
+          {/* Own 6-yard box */}
+          <rect x="37" y="92" width="26" height="4" />
+          {/* Own penalty arc */}
+          <path d="M 38 80 A 9 9 0 0 1 62 80" />
         </g>
       </svg>
 
-      {/* Slots — positioned using formation coords directly */}
+      {/* Slots — positioned using formation coords converted to screen coords */}
       {formation.slots.map((fs, idx) => {
         const slot = slots.find((s) => s.slotId === fs.id);
         const player = slot?.player ?? null;
         const selected = selectedSlotId === fs.id;
         const group = positionGroup(fs.position);
         const color = GROUP_COLOR[group];
-        const label = POS_LABEL[fs.position][lang];
+        // Always show the position code (ST, CB, etc.)
+        const label = fs.position;
 
-        const canPlace = placing && pendingPlayer
-          ? positionFit(pendingPlayer, fs.position) !== null
-          : false;
-        const isPrimary = placing && pendingPlayer
-          ? positionFit(pendingPlayer, fs.position) === 'primary'
-          : false;
-        const isSecondary = placing && pendingPlayer
-          ? positionFit(pendingPlayer, fs.position) === 'secondary'
-          : false;
+        // Since any player can play any position, always allow placement.
+        const fit = placing && pendingPlayer
+          ? positionFit(pendingPlayer, fs.position)
+          : null;
+        const isPrimary = fit === 'primary';
+        const isSecondary = fit === 'secondary';
+        const isOther = fit === 'other';
+        const occupied = !!player;
 
-        const clickable = placing ? canPlace : interactive;
+        // When placing, all empty slots are clickable (any position allowed).
+        const clickable = placing ? !occupied : interactive;
 
         return (
           <motion.button
@@ -132,42 +114,52 @@ export default function Pitch({
             className={`absolute -translate-x-1/2 -translate-y-1/2 flex flex-col items-center justify-center rounded-full font-mono font-bold transition-all ${
               compact ? 'w-10 h-10 text-[10px]' : 'w-14 h-14 sm:w-16 sm:h-16 text-xs'
             } ${
-              clickable ? 'cursor-pointer hover:scale-110' : placing ? 'cursor-not-allowed opacity-40' : 'cursor-default'
+              clickable ? 'cursor-pointer hover:scale-110' : 'cursor-default'
             } ${selected ? 'ring-2 ring-accent ring-offset-2 ring-offset-pitch-700 scale-110 z-10' : ''} ${
               isPrimary ? 'ring-2 ring-green-400 animate-pulse z-10' : ''
-            } ${isSecondary ? 'ring-2 ring-yellow-400 z-10' : ''}`}
+            } ${isSecondary ? 'ring-2 ring-yellow-400 z-10' : ''} ${
+              isOther ? 'ring-2 ring-orange-400/70 z-10' : ''
+            }`}
             style={{
               left: `${fs.x}%`,
               top: `${100 - fs.y}%`,
-              background: player
+              background: occupied
                 ? `linear-gradient(145deg, ${color}ee, ${color}99)`
-                : canPlace
-                  ? isPrimary
-                    ? 'rgba(34,197,94,0.25)'
-                    : 'rgba(250,204,21,0.2)'
-                  : 'rgba(10,12,18,0.7)',
+                : isPrimary
+                  ? 'rgba(34,197,94,0.3)'
+                  : isSecondary
+                    ? 'rgba(250,204,21,0.25)'
+                    : isOther
+                      ? 'rgba(249,115,22,0.2)'
+                      : 'rgba(10,12,18,0.7)',
               border: `1.5px solid ${
-                player
+                occupied
                   ? 'rgba(255,255,255,0.5)'
                   : isPrimary
                     ? 'rgba(74,222,128,0.9)'
                     : isSecondary
                       ? 'rgba(250,204,21,0.8)'
-                      : 'rgba(255,255,255,0.18)'
+                      : isOther
+                        ? 'rgba(249,115,22,0.7)'
+                        : 'rgba(255,255,255,0.18)'
               }`,
               backdropFilter: 'blur(2px)',
             }}
-            title={player ? player.name : label}
+            title={player ? `${player.name} (${label})` : label}
           >
-            {player ? (
+            {occupied ? (
               <PlayerToken
-                player={player}
+                player={player!}
                 showRatings={showRatings}
                 compact={compact}
                 positionFit={slot?.positionFit ?? null}
+                positionLabel={label}
+                lang={lang}
               />
             ) : (
-              <span className="text-white/70 leading-none">{label}</span>
+              <span className="text-white/70 font-mono font-bold tracking-tight leading-none">
+                {label}
+              </span>
             )}
           </motion.button>
         );
@@ -195,13 +187,16 @@ function PlayerToken({
   showRatings,
   compact,
   positionFit: fit,
+  positionLabel,
+  lang,
 }: {
   player: Player;
   showRatings: boolean;
   compact: boolean;
-  positionFit: 'primary' | 'secondary' | null;
+  positionFit: 'primary' | 'secondary' | 'other' | null;
+  positionLabel: string;
+  lang: string;
 }) {
-  const { lang } = useLang();
   return (
     <div className="flex flex-col items-center justify-center leading-none text-white">
       {showRatings && (
@@ -209,6 +204,9 @@ function PlayerToken({
           {player.rating}
           {fit === 'secondary' && (
             <span className="text-yellow-300 text-[10px] ml-0.5">-5</span>
+          )}
+          {fit === 'other' && (
+            <span className="text-orange-300 text-[10px] ml-0.5">-15</span>
           )}
         </span>
       )}
@@ -218,6 +216,10 @@ function PlayerToken({
         }`}
       >
         {lang === 'zh' ? player.nameZh : player.name}
+      </span>
+      {/* Always show the position code the player is playing */}
+      <span className={`font-mono font-bold text-white/80 ${compact ? 'text-[7px]' : 'text-[9px] sm:text-[10px]'}`}>
+        {positionLabel}
       </span>
     </div>
   );
