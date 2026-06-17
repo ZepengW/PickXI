@@ -11,10 +11,10 @@ export default function Nav() {
     <header className="fixed top-0 inset-x-0 z-50">
       <div className="mx-auto max-w-7xl px-5 sm:px-8 h-16 flex items-center justify-between">
         <Link to="/" className="flex items-center gap-2.5 group">
-          <span className="font-display font-black text-xl tracking-tightest text-ink-100">
+          <span className="font-display font-black text-2xl tracking-tightest text-ink-100">
             Dream<span className="text-accent">XI</span>
           </span>
-          <span className="hidden sm:inline text-[11px] text-ink-400 font-medium tracking-wide uppercase">
+          <span className="hidden sm:inline text-sm text-ink-400 font-medium tracking-wide uppercase">
             {t('brandTagline')}
           </span>
         </Link>
@@ -22,7 +22,7 @@ export default function Nav() {
         <nav className="flex items-center gap-1 sm:gap-2">
           <Link
             to="/"
-            className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
+            className={`px-4 py-2 text-base font-medium rounded-md transition-colors ${
               !onGame ? 'text-ink-100' : 'text-ink-400 hover:text-ink-100'
             }`}
           >
@@ -30,7 +30,7 @@ export default function Nav() {
           </Link>
           <Link
             to="/game"
-            className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
+            className={`px-4 py-2 text-base font-medium rounded-md transition-colors ${
               onGame ? 'text-ink-100' : 'text-ink-400 hover:text-ink-100'
             }`}
           >
@@ -38,7 +38,7 @@ export default function Nav() {
           </Link>
           <button
             onClick={() => setLang(lang === 'zh' ? 'en' : 'zh')}
-            className="ml-1 px-2.5 py-1.5 text-sm font-mono font-bold text-ink-200 border border-ink-700 rounded-md hover:border-accent hover:text-accent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+            className="ml-1 px-3 py-2 text-base font-mono font-bold text-ink-200 border border-ink-700 rounded-md hover:border-accent hover:text-accent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
             aria-label={lang === 'zh' ? '切换到英文' : 'Switch to Chinese'}
           >
             {t('langToggle')}

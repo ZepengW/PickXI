@@ -130,7 +130,7 @@ export default function Pitch({
             animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: 0.15 + idx * 0.04, type: 'spring', stiffness: 200 }}
             className={`absolute -translate-x-1/2 -translate-y-1/2 flex flex-col items-center justify-center rounded-full font-mono font-bold transition-all ${
-              compact ? 'w-9 h-9 text-[9px]' : 'w-12 h-12 sm:w-14 sm:h-14 text-[10px]'
+              compact ? 'w-10 h-10 text-[10px]' : 'w-14 h-14 sm:w-16 sm:h-16 text-xs'
             } ${
               clickable ? 'cursor-pointer hover:scale-110' : placing ? 'cursor-not-allowed opacity-40' : 'cursor-default'
             } ${selected ? 'ring-2 ring-accent ring-offset-2 ring-offset-pitch-700 scale-110 z-10' : ''} ${
@@ -205,16 +205,16 @@ function PlayerToken({
   return (
     <div className="flex flex-col items-center justify-center leading-none text-white">
       {showRatings && (
-        <span className={compact ? 'text-[11px]' : 'text-sm sm:text-base'}>
+        <span className={compact ? 'text-xs' : 'text-base sm:text-lg'}>
           {player.rating}
           {fit === 'secondary' && (
-            <span className="text-yellow-300 text-[8px] ml-0.5">-5</span>
+            <span className="text-yellow-300 text-[10px] ml-0.5">-5</span>
           )}
         </span>
       )}
       <span
-        className={`font-sans font-semibold text-center px-0.5 truncate max-w-[3.2rem] ${
-          compact ? 'text-[7px]' : 'text-[8px] sm:text-[9px]'
+        className={`font-sans font-semibold text-center px-0.5 truncate max-w-[4.5rem] ${
+          compact ? 'text-[8px]' : 'text-[10px] sm:text-xs'
         }`}
       >
         {lang === 'zh' ? player.nameZh : player.name}

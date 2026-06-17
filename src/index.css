@@ -12,12 +12,25 @@ body {
   background: #07080c;
   color: #e6e8ee;
   font-family: 'Inter', system-ui, sans-serif;
+  font-size: 16px;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
 #root {
   min-height: 100svh;
+}
+
+/* Larger base font on larger screens */
+@media (min-width: 1024px) {
+  html, body {
+    font-size: 17px;
+  }
+}
+@media (min-width: 1440px) {
+  html, body {
+    font-size: 18px;
+  }
 }
 
 ::selection {

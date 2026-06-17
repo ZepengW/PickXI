@@ -8,6 +8,7 @@ import { UCL_PLAYERS } from './players/ucl';
 import { WC_PLAYERS } from './players/worldcup';
 import { SERIEA_PLAYERS } from './players/seriea';
 import { BUNDESLIGA_PLAYERS } from './players/bundesliga';
+import { FIFA_IMPORTED_PLAYERS } from './players/fifa-imported';
 
 export const ALL_PLAYERS: Player[] = [
   ...EPL_PLAYERS,
@@ -17,6 +18,7 @@ export const ALL_PLAYERS: Player[] = [
   ...WC_PLAYERS,
   ...SERIEA_PLAYERS,
   ...BUNDESLIGA_PLAYERS,
+  ...FIFA_IMPORTED_PLAYERS,
 ];
 
 export { COMPETITIONS, COMPETITION_MAP, CLUBS, CLUB_MAP, clubsForCompetition, FORMATIONS, getFormation };

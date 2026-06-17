@@ -246,24 +246,24 @@ function DraftView() {
       className="flex-1 flex flex-col w-full"
     >
       {/* Top bar */}
-      <div className="flex items-center justify-between px-4 sm:px-6 py-2.5 border-b border-ink-800/60 flex-wrap gap-2">
+      <div className="flex items-center justify-between px-4 sm:px-6 py-3 border-b border-ink-800/60 flex-wrap gap-2">
         <div className="flex items-center gap-4">
-          <div className="font-mono text-sm">
-            <span className="text-accent font-bold text-lg">{filled}</span>
+          <div className="font-mono text-base">
+            <span className="text-accent font-bold text-xl">{filled}</span>
             <span className="text-ink-500">/11</span>
           </div>
           <div className="flex gap-1" aria-hidden="true">
             {slots.map((s) => (
               <div
                 key={s.slotId}
-                className={`w-2 h-2 rounded-full ${s.player ? 'bg-accent' : 'bg-ink-700'}`}
+                className={`w-2.5 h-2.5 rounded-full ${s.player ? 'bg-accent' : 'bg-ink-700'}`}
               />
             ))}
           </div>
           {/* Formation quick-switch */}
           <button
             onClick={() => setShowFormationPicker((v) => !v)}
-            className="px-3 py-1 text-xs font-mono border border-ink-700 rounded-full text-ink-300 hover:border-accent hover:text-accent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+            className="px-4 py-1.5 text-sm font-mono border border-ink-700 rounded-full text-ink-300 hover:border-accent hover:text-accent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
           >
             {formationId.toUpperCase()} ▾
           </button>
@@ -271,7 +271,7 @@ function DraftView() {
         <button
           onClick={handleSimulate}
           disabled={!complete || simulating}
-          className={`px-6 py-2.5 rounded-full font-bold text-sm transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
+          className={`px-7 py-3 rounded-full font-bold text-base transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
             complete
               ? 'bg-accent text-ink-950 hover:bg-accent-dark'
               : 'bg-ink-800 text-ink-500 cursor-not-allowed'
@@ -340,7 +340,7 @@ function DraftView() {
             </div>
           </div>
 
-          <p className="text-xs text-ink-500 text-center">
+          <p className="text-sm text-ink-500 text-center">
             {pendingPlayer
               ? lang === 'zh'
                 ? `将 ${pendingPlayer.nameZh} 放到高亮位置。绿色=最佳，黄色=可踢(-5)`
@@ -494,14 +494,14 @@ function StrengthBars({
   return (
     <div className="grid grid-cols-4 gap-2">
       {bars.map((b) => (
-        <div key={b.label} className="rounded-lg border border-ink-800 bg-ink-900/40 p-2">
-          <div className="text-[10px] text-ink-400 font-mono uppercase mb-1">{b.label}</div>
+        <div key={b.label} className="rounded-lg border border-ink-800 bg-ink-900/40 p-3">
+          <div className="text-xs text-ink-400 font-mono uppercase mb-1">{b.label}</div>
           <div className="flex items-baseline gap-1.5">
-            <span className="font-display font-black text-xl text-white tabular-nums">
+            <span className="font-display font-black text-2xl text-white tabular-nums">
               {Math.round(b.value)}
             </span>
           </div>
-          <div className="mt-1 h-1.5 rounded-full bg-ink-800 overflow-hidden">
+          <div className="mt-1.5 h-2 rounded-full bg-ink-800 overflow-hidden">
             <div
               className={`h-full ${b.color} rounded-full transition-all duration-500`}
               style={{ width: `${b.value}%` }}
