@@ -7,6 +7,7 @@ export const COMPETITIONS: Competition[] = [
     nameZh: '英超',
     type: 'league',
     matches: 38,
+    teamCount: 20,
     seasons: [
       '1992-93', '1995-96', '1998-99', '2001-02', '2003-04',
       '2007-08', '2011-12', '2013-14', '2015-16', '2017-18',
@@ -25,6 +26,7 @@ export const COMPETITIONS: Competition[] = [
     nameZh: '西甲',
     type: 'league',
     matches: 38,
+    teamCount: 20,
     seasons: [
       '1996-97', '1998-99', '2002-03', '2004-05', '2008-09',
       '2010-11', '2011-12', '2013-14', '2015-16', '2016-17',
@@ -43,6 +45,7 @@ export const COMPETITIONS: Competition[] = [
     nameZh: '中超',
     type: 'league',
     matches: 30,
+    teamCount: 16,
     seasons: [
       '2013', '2015', '2017', '2018', '2019',
       '2020', '2022', '2023', '2024',
@@ -59,6 +62,7 @@ export const COMPETITIONS: Competition[] = [
     nameZh: '欧冠',
     type: 'cup',
     matches: 13,
+    teamCount: 32,
     seasons: [
       '1998-99', '2001-02', '2004-05', '2007-08', '2009-10',
       '2011-12', '2012-13', '2013-14', '2015-16', '2016-17',
@@ -77,6 +81,7 @@ export const COMPETITIONS: Competition[] = [
     nameZh: '世界杯',
     type: 'cup',
     matches: 7,
+    teamCount: 32,
     seasons: [
       '1970', '1986', '1994', '1998', '2002', '2006', '2010',
       '2014', '2018', '2022',
@@ -93,6 +98,7 @@ export const COMPETITIONS: Competition[] = [
     nameZh: '意甲',
     type: 'league',
     matches: 38,
+    teamCount: 20,
     seasons: [
       '1988-89', '1991-92', '1995-96', '1998-99', '2001-02',
       '2002-03', '2003-04', '2006-07', '2010-11', '2015-16',
@@ -111,6 +117,7 @@ export const COMPETITIONS: Competition[] = [
     nameZh: '德甲',
     type: 'league',
     matches: 34,
+    teamCount: 18,
     seasons: [
       '1998-99', '2000-01', '2001-02', '2008-09', '2010-11',
       '2011-12', '2012-13', '2013-14', '2015-16', '2018-19',

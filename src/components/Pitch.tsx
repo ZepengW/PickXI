@@ -2,7 +2,7 @@ import { motion } from 'framer-motion';
 import type { Player, Position, SquadSlot } from '../types';
 import { getFormation } from '../data';
 import { useLang } from '../i18n/useLang';
-import { positionGroup } from '../engine/simulation';
+import { positionGroup, positionFit } from '../engine/simulation';
 
 const POS_LABEL: Record<Position, { zh: string; en: string }> = {
   GK: { zh: '门将', en: 'GK' },
@@ -32,6 +32,8 @@ const GROUP_COLOR: Record<string, string> = {
 interface PitchProps {
   formationId: string;
   slots: SquadSlot[];
+  /** Player waiting to be placed — slots they can play will be highlighted. */
+  pendingPlayer?: Player | null;
   selectedSlotId?: string | null;
   onSelectSlot?: (slotId: string) => void;
   onRemovePlayer?: (slotId: string) => void;
@@ -42,6 +44,7 @@ interface PitchProps {
 export default function Pitch({
   formationId,
   slots,
+  pendingPlayer = null,
   selectedSlotId,
   onSelectSlot,
   onRemovePlayer,
@@ -51,6 +54,7 @@ export default function Pitch({
   const { lang } = useLang();
   const formation = getFormation(formationId);
   const interactive = !!onSelectSlot;
+  const placing = !!pendingPlayer;
 
   return (
     <div
@@ -58,23 +62,32 @@ export default function Pitch({
         compact ? 'max-w-[280px]' : 'max-w-[440px]'
       }`}
     >
-      {/* Pitch markings */}
+      {/* Pitch markings — viewBox matches aspect-[3/4] exactly (100×133.33) */}
       <svg
-        viewBox="0 0 100 133"
+        viewBox="0 0 100 133.33"
         className="absolute inset-0 w-full h-full"
         preserveAspectRatio="none"
       >
-        <g fill="none" stroke="rgba(255,255,255,0.35)" strokeWidth="0.4">
-          <rect x="3" y="3" width="94" height="127" />
-          <line x1="3" y1="66.5" x2="97" y2="66.5" />
-          <circle cx="50" cy="66.5" r="12" />
-          <circle cx="50" cy="66.5" r="1.2" fill="rgba(255,255,255,0.5)" />
-          {/* top box (attacking) */}
-          <rect x="28" y="3" width="44" height="20" />
-          <rect x="38" y="3" width="24" height="8" />
-          {/* bottom box (own) */}
-          <rect x="28" y="110" width="44" height="20" />
-          <rect x="38" y="122" width="24" height="8" />
+        <g fill="none" stroke="rgba(255,255,255,0.3)" strokeWidth="0.4">
+          {/* Outer boundary */}
+          <rect x="3" y="3" width="94" height="127.33" />
+          {/* Halfway line */}
+          <line x1="3" y1="66.67" x2="97" y2="66.67" />
+          {/* Centre circle */}
+          <circle cx="50" cy="66.67" r="11" />
+          <circle cx="50" cy="66.67" r="1" fill="rgba(255,255,255,0.4)" />
+          {/* Top penalty box (attacking goal) */}
+          <rect x="22" y="3" width="56" height="20" />
+          {/* Top 6-yard box */}
+          <rect x="37" y="3" width="26" height="8" />
+          {/* Top penalty arc */}
+          <path d="M 38 23 A 11 11 0 0 0 62 23" />
+          {/* Bottom penalty box (own goal) */}
+          <rect x="22" y="110.33" width="56" height="20" />
+          {/* Bottom 6-yard box */}
+          <rect x="37" y="122.33" width="26" height="8" />
+          {/* Bottom penalty arc */}
+          <path d="M 38 110.33 A 11 11 0 0 1 62 110.33" />
         </g>
       </svg>
 
@@ -87,33 +100,66 @@ export default function Pitch({
         const color = GROUP_COLOR[group];
         const label = POS_LABEL[fs.position][lang];
 
+        // Placement mode: highlight valid slots
+        const canPlace = placing && pendingPlayer
+          ? positionFit(pendingPlayer, fs.position) !== null
+          : false;
+        const isPrimary = placing && pendingPlayer
+          ? positionFit(pendingPlayer, fs.position) === 'primary'
+          : false;
+        const isSecondary = placing && pendingPlayer
+          ? positionFit(pendingPlayer, fs.position) === 'secondary'
+          : false;
+
+        // In placement mode, only valid slots are clickable
+        const clickable = placing ? canPlace : interactive;
+
         return (
           <motion.button
             key={fs.id}
             type="button"
-            disabled={!interactive}
-            onClick={() => interactive && onSelectSlot?.(fs.id)}
+            disabled={!clickable}
+            onClick={() => clickable && onSelectSlot?.(fs.id)}
             initial={{ opacity: 0, scale: 0.6 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: 0.15 + idx * 0.04, type: 'spring', stiffness: 200 }}
             className={`absolute -translate-x-1/2 -translate-y-1/2 flex flex-col items-center justify-center rounded-full font-mono font-bold transition-all ${
               compact ? 'w-9 h-9 text-[9px]' : 'w-12 h-12 sm:w-14 sm:h-14 text-[10px]'
             } ${
-              interactive ? 'cursor-pointer hover:scale-110' : 'cursor-default'
-            } ${selected ? 'ring-2 ring-accent ring-offset-2 ring-offset-pitch-700 scale-110 z-10' : ''}`}
+              clickable ? 'cursor-pointer hover:scale-110' : placing ? 'cursor-not-allowed opacity-40' : 'cursor-default'
+            } ${selected ? 'ring-2 ring-accent ring-offset-2 ring-offset-pitch-700 scale-110 z-10' : ''} ${
+              isPrimary ? 'ring-2 ring-green-400 animate-pulse z-10' : ''
+            } ${isSecondary ? 'ring-2 ring-yellow-400 z-10' : ''}`}
             style={{
               left: `${fs.x}%`,
               top: `${100 - fs.y}%`,
               background: player
                 ? `linear-gradient(145deg, ${color}ee, ${color}99)`
-                : 'rgba(10,12,18,0.7)',
-              border: `1.5px solid ${player ? 'rgba(255,255,255,0.5)' : 'rgba(255,255,255,0.18)'}`,
+                : canPlace
+                  ? isPrimary
+                    ? 'rgba(34,197,94,0.25)'
+                    : 'rgba(250,204,21,0.2)'
+                  : 'rgba(10,12,18,0.7)',
+              border: `1.5px solid ${
+                player
+                  ? 'rgba(255,255,255,0.5)'
+                  : isPrimary
+                    ? 'rgba(74,222,128,0.9)'
+                    : isSecondary
+                      ? 'rgba(250,204,21,0.8)'
+                      : 'rgba(255,255,255,0.18)'
+              }`,
               backdropFilter: 'blur(2px)',
             }}
             title={player ? player.name : label}
           >
             {player ? (
-              <PlayerToken player={player} showRatings={showRatings} compact={compact} />
+              <PlayerToken
+                player={player}
+                showRatings={showRatings}
+                compact={compact}
+                positionFit={slot?.positionFit ?? null}
+              />
             ) : (
               <span className="text-white/70 leading-none">{label}</span>
             )}
@@ -122,7 +168,7 @@ export default function Pitch({
       })}
 
       {/* Remove hint on selected filled slot */}
-      {interactive && selectedSlotId && onRemovePlayer && (() => {
+      {interactive && !placing && selectedSlotId && onRemovePlayer && (() => {
         const sel = slots.find((s) => s.slotId === selectedSlotId);
         if (!sel?.player) return null;
         return (
@@ -142,10 +188,12 @@ function PlayerToken({
   player,
   showRatings,
   compact,
+  positionFit: fit,
 }: {
   player: Player;
   showRatings: boolean;
   compact: boolean;
+  positionFit: 'primary' | 'secondary' | null;
 }) {
   const { lang } = useLang();
   return (
@@ -153,6 +201,9 @@ function PlayerToken({
       {showRatings && (
         <span className={compact ? 'text-[11px]' : 'text-sm sm:text-base'}>
           {player.rating}
+          {fit === 'secondary' && (
+            <span className="text-yellow-300 text-[8px] ml-0.5">-5</span>
+          )}
         </span>
       )}
       <span

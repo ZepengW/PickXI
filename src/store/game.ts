@@ -2,10 +2,9 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { Lang, Player, SimResult, SquadSlot } from '../types';
 import { getFormation, availableSeasons, getCompetition } from '../data';
-import { simulateSeason } from '../engine/simulation';
+import { simulateSeason, positionFit } from '../engine/simulation';
 
 export type Phase = 'setup' | 'draft' | 'sim' | 'results';
-export type Difficulty = 'normal' | 'hard';
 
 interface SpinResult {
   clubId: string;
@@ -27,7 +26,8 @@ interface GameState {
   draftedIds: string[];
   spin: SpinResult | null;
   spinning: boolean;
-  selectedSlotId: string | null;
+  /** Player picked from the squad but not yet placed on the pitch. */
+  pendingPlayer: Player | null;
   result: SimResult | null;
 
   // actions
@@ -40,8 +40,12 @@ interface GameState {
   startDraft: () => void;
   doSpin: (clubId: string, season: string) => void;
   clearSpin: () => void;
-  selectSlot: (slotId: string | null) => void;
-  assignPlayer: (slotId: string, player: Player) => void;
+  /** Pick a player from the spun squad — enters "placement" mode. */
+  pickPlayer: (player: Player) => void;
+  /** Place the pending player into a slot. */
+  placePlayer: (slotId: string) => void;
+  /** Cancel placement (return player to the squad list). */
+  cancelPlacement: () => void;
   removePlayer: (slotId: string) => void;
 
   runSim: () => void;
@@ -51,7 +55,12 @@ interface GameState {
 
 function emptySlots(formationId: string): SquadSlot[] {
   const f = getFormation(formationId);
-  return f.slots.map((s) => ({ slotId: s.id, position: s.position, player: null }));
+  return f.slots.map((s) => ({
+    slotId: s.id,
+    position: s.position,
+    player: null,
+    positionFit: null,
+  }));
 }
 
 export const useGame = create<GameState>()(
@@ -69,7 +78,7 @@ export const useGame = create<GameState>()(
       draftedIds: [],
       spin: null,
       spinning: false,
-      selectedSlotId: null,
+      pendingPlayer: null,
       result: null,
 
       setLang: (lang) => set({ lang }),
@@ -85,10 +94,17 @@ export const useGame = create<GameState>()(
           slots: emptySlots(get().formationId),
           draftedIds: [],
           spin: null,
+          pendingPlayer: null,
         });
       },
       setFormation: (id) =>
-        set({ formationId: id, slots: emptySlots(id), draftedIds: [], spin: null }),
+        set({
+          formationId: id,
+          slots: emptySlots(id),
+          draftedIds: [],
+          spin: null,
+          pendingPlayer: null,
+        }),
       setSeasonRange: (from, to) => set({ seasonFrom: from, seasonTo: to }),
       setShowRatings: (show) => set({ showRatings: show }),
 
@@ -98,32 +114,43 @@ export const useGame = create<GameState>()(
           slots: emptySlots(get().formationId),
           draftedIds: [],
           spin: null,
-          selectedSlotId: null,
+          pendingPlayer: null,
           result: null,
         }),
 
       doSpin: (clubId, season) =>
-        set({ spin: { clubId, season }, spinning: false, selectedSlotId: null }),
+        set({ spin: { clubId, season }, spinning: false, pendingPlayer: null }),
 
-      clearSpin: () => set({ spin: null, selectedSlotId: null }),
+      clearSpin: () => set({ spin: null, pendingPlayer: null }),
 
-      selectSlot: (slotId) => set({ selectedSlotId: slotId }),
+      pickPlayer: (player) => set({ pendingPlayer: player }),
 
-      assignPlayer: (slotId, player) => {
-        const { slots, draftedIds } = get();
+      placePlayer: (slotId) => {
+        const { slots, draftedIds, pendingPlayer } = get();
+        if (!pendingPlayer) return;
+
+        const slot = slots.find((s) => s.slotId === slotId);
+        if (!slot) return;
+
+        // Check position fit
+        const fit = positionFit(pendingPlayer, slot.position);
+        if (!fit) return; // can't place here
+
         // If player already placed elsewhere, remove from old slot first.
         const newSlots = slots.map((s) => {
-          if (s.player?.id === player.id) return { ...s, player: null };
-          if (s.slotId === slotId) return { ...s, player };
+          if (s.player?.id === pendingPlayer.id) return { ...s, player: null, positionFit: null };
+          if (s.slotId === slotId) return { ...s, player: pendingPlayer, positionFit: fit };
           return s;
         });
         set({
           slots: newSlots,
-          draftedIds: [...draftedIds, player.id],
+          draftedIds: [...draftedIds, pendingPlayer.id],
           spin: null,
-          selectedSlotId: null,
+          pendingPlayer: null,
         });
       },
+
+      cancelPlacement: () => set({ pendingPlayer: null }),
 
       removePlayer: (slotId) => {
         const { slots, draftedIds } = get();
@@ -131,7 +158,7 @@ export const useGame = create<GameState>()(
         if (!slot?.player) return;
         set({
           slots: slots.map((s) =>
-            s.slotId === slotId ? { ...s, player: null } : s,
+            s.slotId === slotId ? { ...s, player: null, positionFit: null } : s,
           ),
           draftedIds: draftedIds.filter((id) => id !== slot.player!.id),
         });
@@ -139,8 +166,7 @@ export const useGame = create<GameState>()(
 
       runSim: () => {
         const { competitionId, slots } = get();
-        const players = slots.map((s) => s.player);
-        const result = simulateSeason(competitionId, players);
+        const result = simulateSeason(competitionId, slots);
         set({ phase: 'results', result });
       },
 
@@ -151,7 +177,7 @@ export const useGame = create<GameState>()(
           draftedIds: [],
           spin: null,
           spinning: false,
-          selectedSlotId: null,
+          pendingPlayer: null,
           result: null,
         }),
 
@@ -167,6 +193,12 @@ export const useGame = create<GameState>()(
         seasonTo: s.seasonTo,
         showRatings: s.showRatings,
       }),
+      // Fix hydration: recompute slots to match persisted formationId.
+      onRehydrateStorage: () => (state) => {
+        if (state) {
+          state.slots = emptySlots(state.formationId);
+        }
+      },
     },
   ),
 );

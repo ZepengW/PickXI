@@ -54,7 +54,6 @@ function SetupView() {
   const comp = getCompetition(competitionId)!;
   const seasons = availableSeasons(competitionId);
 
-  // Ensure season range is valid for the selected competition.
   const safeFrom = seasons.includes(seasonFrom) ? seasonFrom : seasons[0] ?? '';
   const safeTo = seasons.includes(seasonTo) ? seasonTo : seasons[seasons.length - 1] ?? '';
 
@@ -74,12 +73,12 @@ function SetupView() {
 
       {/* Competition */}
       <Section label={t('compsTitle')}>
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
           {COMPETITIONS.map((c) => (
             <button
               key={c.id}
               onClick={() => game.setCompetition(c.id)}
-              className={`rounded-xl border p-3 text-left transition-all ${
+              className={`rounded-xl border p-3 text-left transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
                 competitionId === c.id
                   ? 'border-accent bg-accent/10'
                   : 'border-ink-700 hover:border-ink-500 bg-ink-900/40'
@@ -92,7 +91,7 @@ function SetupView() {
                 {lang === 'zh' ? c.nameZh : c.name}
               </div>
               <div className="text-[10px] font-mono text-ink-500 mt-1">
-                {c.matches} {lang === 'zh' ? '场' : 'games'}
+                {c.matches} {lang === 'zh' ? '场' : 'games'} · {c.teamCount} {lang === 'zh' ? '队' : 'teams'}
               </div>
             </button>
           ))}
@@ -106,7 +105,7 @@ function SetupView() {
             <button
               key={f.id}
               onClick={() => game.setFormation(f.id)}
-              className={`px-5 py-2.5 rounded-full font-mono font-bold text-sm border transition-all ${
+              className={`px-5 py-2.5 rounded-full font-mono font-bold text-sm border transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
                 formationId === f.id
                   ? 'border-accent bg-accent text-ink-950'
                   : 'border-ink-700 text-ink-200 hover:border-ink-500'
@@ -157,7 +156,7 @@ function SetupView() {
         <div className="flex gap-2">
           <button
             onClick={() => game.setShowRatings(true)}
-            className={`px-5 py-2.5 rounded-full text-sm font-medium border transition-all ${
+            className={`px-5 py-2.5 rounded-full text-sm font-medium border transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
               showRatings
                 ? 'border-accent bg-accent/10 text-accent'
                 : 'border-ink-700 text-ink-300 hover:border-ink-500'
@@ -167,7 +166,7 @@ function SetupView() {
           </button>
           <button
             onClick={() => game.setShowRatings(false)}
-            className={`px-5 py-2.5 rounded-full text-sm font-medium border transition-all ${
+            className={`px-5 py-2.5 rounded-full text-sm font-medium border transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
               !showRatings
                 ? 'border-accent bg-accent/10 text-accent'
                 : 'border-ink-700 text-ink-300 hover:border-ink-500'
@@ -181,7 +180,7 @@ function SetupView() {
       <div className="mt-10 flex justify-center">
         <button
           onClick={() => game.startDraft()}
-          className="px-10 py-4 bg-accent text-ink-950 font-bold rounded-full hover:bg-accent-dark transition-colors text-base"
+          className="px-10 py-4 bg-accent text-ink-950 font-bold rounded-full hover:bg-accent-dark transition-colors text-base focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-ink-950"
         >
           {t('startDraft')} →
         </button>
@@ -206,10 +205,11 @@ function DraftView() {
     slots,
     draftedIds,
     spin,
-    selectedSlotId,
+    pendingPlayer,
   } = game;
 
   const [simulating, setSimulating] = useState(false);
+  const [showFormationPicker, setShowFormationPicker] = useState(false);
   const filled = filledCount(slots);
   const complete = isComplete(slots);
 
@@ -225,16 +225,11 @@ function DraftView() {
     return playersForClubSeason(spin.clubId, spin.season, draftedSet);
   }, [spin, draftedSet]);
 
-  const selectedSlot = slots.find((s) => s.slotId === selectedSlotId) ?? null;
-  const selectedPosition = selectedSlot?.position ?? null;
-
-  const players = slots.map((s) => s.player);
-  const strength = teamStrength(players);
+  const strength = teamStrength(slots);
 
   function handleSimulate() {
     if (!complete) return;
     setSimulating(true);
-    // Defer to next tick so the UI can show a simulating state.
     setTimeout(() => {
       game.runSim();
       setSimulating(false);
@@ -266,11 +261,18 @@ function DraftView() {
           <div className="text-xs text-ink-400 font-mono">
             OVR <span className="text-white font-bold">{Math.round(strength.overall)}</span>
           </div>
+          {/* Formation quick-switch */}
+          <button
+            onClick={() => setShowFormationPicker((v) => !v)}
+            className="px-3 py-1 text-xs font-mono border border-ink-700 rounded-full text-ink-300 hover:border-accent hover:text-accent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+          >
+            {formationId.toUpperCase()} ▾
+          </button>
         </div>
         <button
           onClick={handleSimulate}
           disabled={!complete || simulating}
-          className={`px-6 py-2.5 rounded-full font-bold text-sm transition-all ${
+          className={`px-6 py-2.5 rounded-full font-bold text-sm transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
             complete
               ? 'bg-accent text-ink-950 hover:bg-accent-dark'
               : 'bg-ink-800 text-ink-500 cursor-not-allowed'
@@ -280,28 +282,105 @@ function DraftView() {
         </button>
       </div>
 
+      {/* Formation picker dropdown */}
+      <AnimatePresence>
+        {showFormationPicker && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            className="overflow-hidden mb-4"
+          >
+            <div className="flex flex-wrap gap-2 p-3 rounded-xl border border-ink-800 bg-ink-900/60">
+              {FORMATIONS.map((f) => (
+                <button
+                  key={f.id}
+                  onClick={() => {
+                    game.setFormation(f.id);
+                    setShowFormationPicker(false);
+                  }}
+                  className={`px-4 py-2 rounded-full font-mono font-bold text-sm border transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
+                    formationId === f.id
+                      ? 'border-accent bg-accent text-ink-950'
+                      : 'border-ink-700 text-ink-200 hover:border-ink-500'
+                  }`}
+                >
+                  {lang === 'zh' ? f.nameZh : f.name}
+                </button>
+              ))}
+              <p className="w-full text-xs text-ink-500 mt-1">
+                {lang === 'zh' ? '切换阵型会清空已选球员。' : 'Switching formation clears your draft.'}
+              </p>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <div className="grid lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)] gap-6">
         {/* Pitch */}
         <div className="flex flex-col items-center">
           <Pitch
             formationId={formationId}
             slots={slots}
-            selectedSlotId={selectedSlotId}
-            onSelectSlot={(id) => game.selectSlot(id === selectedSlotId ? null : id)}
+            pendingPlayer={pendingPlayer}
+            onSelectSlot={(id) => {
+              if (pendingPlayer) {
+                game.placePlayer(id);
+              }
+            }}
             onRemovePlayer={(id) => game.removePlayer(id)}
             showRatings={showRatings}
           />
           <p className="text-xs text-ink-500 mt-3 text-center max-w-xs">
-            {lang === 'zh'
-              ? '点击空位选中，再从右侧选秀；点击已选球员可移除。'
-              : 'Tap an empty slot to select it, then draft from the right. Tap a placed player to remove.'}
+            {pendingPlayer
+              ? lang === 'zh'
+                ? `将 ${pendingPlayer.nameZh} 放到高亮位置。绿色=最佳位置，黄色=可踢但有 -5 惩罚。`
+                : `Place ${pendingPlayer.name} on a highlighted slot. Green = primary, Yellow = secondary (-5).`
+              : lang === 'zh'
+                ? '转动转盘选球队 → 选球员 → 放到可踢位置。点击已放球员可移除。'
+                : 'Spin → pick a player → place them on a valid slot. Tap a placed player to remove.'}
           </p>
         </div>
 
         {/* Right panel: wheel or squad picker */}
         <div className="rounded-2xl border border-ink-800 bg-ink-900/40 p-5">
           <AnimatePresence mode="wait">
-            {!spin ? (
+            {/* Placement mode: show pending player card + cancel */}
+            {pendingPlayer ? (
+              <motion.div
+                key="placing"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="text-center"
+              >
+                <h2 className="font-display font-bold text-lg text-white mb-2">
+                  {lang === 'zh' ? '放置球员' : 'Place Player'}
+                </h2>
+                <div className="inline-flex flex-col items-center gap-2 p-4 rounded-xl border border-accent/40 bg-accent/5">
+                  <div className="text-3xl font-display font-black text-accent">
+                    {pendingPlayer.rating}
+                  </div>
+                  <div className="font-bold text-white">
+                    {lang === 'zh' ? pendingPlayer.nameZh : pendingPlayer.name}
+                  </div>
+                  <div className="text-xs text-ink-400 font-mono">
+                    {pendingPlayer.position} · {lang === 'zh' ? pendingPlayer.nationalityZh : pendingPlayer.nationality}
+                  </div>
+                </div>
+                <p className="text-xs text-ink-400 mt-3">
+                  {lang === 'zh'
+                    ? '在球场上点击高亮的位置来放置。'
+                    : 'Click a highlighted slot on the pitch to place.'}
+                </p>
+                <button
+                  onClick={() => game.cancelPlacement()}
+                  className="mt-4 px-6 py-2 rounded-full border border-ink-700 text-ink-300 text-sm font-medium hover:border-ink-500 hover:text-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+                >
+                  {lang === 'zh' ? '取消' : 'Cancel'}
+                </button>
+              </motion.div>
+            ) : !spin ? (
               <motion.div
                 key="wheel"
                 initial={{ opacity: 0 }}
@@ -313,11 +392,9 @@ function DraftView() {
                     {t('spin')}
                   </h2>
                   <p className="text-xs text-ink-400">
-                    {selectedPosition
-                      ? `${t('pickPlayer')} ${selectedPosition}`
-                      : lang === 'zh'
-                        ? '先转动转盘，再选择位置与球员'
-                        : 'Spin first, then choose a slot and player'}
+                    {lang === 'zh'
+                      ? '转动转盘，随机获得一支球队和一个赛季。'
+                      : 'Spin to land on a random club and season.'}
                   </p>
                 </div>
                 <Wheel
@@ -335,16 +412,7 @@ function DraftView() {
               >
                 <SquadPicker
                   players={squadPlayers}
-                  selectedSlotPosition={selectedPosition}
-                  onPick={(player) => {
-                    if (selectedSlotId) {
-                      game.assignPlayer(selectedSlotId, player);
-                    } else {
-                      // Auto-pick first empty slot if none selected.
-                      const empty = slots.find((s) => !s.player);
-                      if (empty) game.assignPlayer(empty.slotId, player);
-                    }
-                  }}
+                  onPick={(player) => game.pickPlayer(player)}
                   draftedIds={draftedSet}
                   showRatings={showRatings}
                   clubId={spin.clubId}
@@ -352,7 +420,7 @@ function DraftView() {
                 />
                 <button
                   onClick={() => game.clearSpin()}
-                  className="mt-4 w-full py-2.5 rounded-full border border-ink-700 text-ink-300 text-sm font-medium hover:border-ink-500 hover:text-white transition-colors"
+                  className="mt-4 w-full py-2.5 rounded-full border border-ink-700 text-ink-300 text-sm font-medium hover:border-ink-500 hover:text-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
                 >
                   {t('reroll')}
                 </button>

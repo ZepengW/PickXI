@@ -66,6 +66,8 @@ export interface Competition {
   type: CompetitionType;
   /** Number of matches your drafted XI plays in a full run. */
   matches: number;
+  /** Total teams in the competition (for league table / cup bracket). */
+  teamCount: number;
   seasons: string[]; // available seasons, ordered
   region: string;
   regionZh: string;
@@ -95,6 +97,8 @@ export interface SquadSlot {
   slotId: string;
   position: Position;
   player: Player | null;
+  /** How well the player fits this slot: 'primary' | 'secondary' | null. */
+  positionFit: 'primary' | 'secondary' | null;
 }
 
 export interface MatchResult {
@@ -123,6 +127,21 @@ export interface SimResult {
   teams: number;
   unbeaten: boolean;
   perfect: boolean;
+  // Extended stats
+  cleanSheets: number;
+  failedToScore: number;
+  biggestWin: { opponentName: string; opponentNameZh: string; score: string } | null;
+  biggestLoss: { opponentName: string; opponentNameZh: string; score: string } | null;
+  longestWinStreak: number;
+  longestUnbeatenRun: number;
+  goalsPerGame: number;
+  concededPerGame: number;
+  pointsPerGame: number;
+  goalDifference: number;
+  /** Season grade S/A/B/C/D/F based on performance. */
+  grade: 'S' | 'A' | 'B' | 'C' | 'D' | 'F';
+  /** Form guide: last 5 results, oldest first. */
+  formGuide: MatchOutcome[];
 }
 
 export type Lang = 'zh' | 'en';

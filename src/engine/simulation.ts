@@ -2,9 +2,11 @@ import type {
   Attributes,
   Club,
   MatchResult,
+  MatchOutcome,
   Player,
   Position,
   SimResult,
+  SquadSlot,
 } from '../types';
 import { CLUB_MAP, getCompetition } from '../data';
 
@@ -51,20 +53,40 @@ export function positionGroup(pos: Position): PositionGroup {
   }
 }
 
+// ---- Position fit -----------------------------------------------------------
+
+/**
+ * Determine how well a player fits a slot position.
+ * - 'primary': the slot position is the player's primary position
+ * - 'secondary': the slot position is in the player's positions list but not primary
+ * - null: cannot play this position
+ */
+export function positionFit(player: Player, slotPosition: Position): 'primary' | 'secondary' | null {
+  if (player.position === slotPosition) return 'primary';
+  if (player.positions.includes(slotPosition)) return 'secondary';
+  return null;
+}
+
+/** Rating penalty applied when a player is out of their primary position. */
+export function positionPenalty(fit: 'primary' | 'secondary' | null): number {
+  if (fit === 'primary') return 0;
+  if (fit === 'secondary') return 5;
+  return 15; // shouldn't happen — placement is gated by the UI
+}
+
 // ---- Team strength ----------------------------------------------------------
 
 /**
  * Compute overall team strength (0-100) from a filled XI.
- * Blends the player's overall rating with the average of their six attributes,
- * weighted by position importance. Penalises squads with empty slots.
+ * Accounts for position fit — players in secondary positions contribute less.
  */
-export function teamStrength(players: (Player | null)[]): {
+export function teamStrength(slots: SquadSlot[]): {
   overall: number;
   attack: number;
   midfield: number;
   defence: number;
 } {
-  const filled = players.filter((p): p is Player => p !== null);
+  const filled = slots.filter((s) => s.player !== null);
   if (filled.length === 0) {
     return { overall: 50, attack: 50, midfield: 50, defence: 50 };
   }
@@ -78,15 +100,17 @@ export function teamStrength(players: (Player | null)[]): {
   let defSum = 0;
   let defW = 0;
 
-  for (const pl of filled) {
-    const w = POSITION_WEIGHT[pl.position] ?? 1;
+  for (const slot of filled) {
+    const pl = slot.player!;
+    const w = POSITION_WEIGHT[slot.position] ?? 1;
+    const penalty = positionPenalty(slot.positionFit);
+    const effectiveRating = Math.max(30, pl.rating - penalty);
     const attrAvg = avgAttr(pl.attr);
-    // Blend overall (which already encodes reputation) with raw attributes.
-    const score = pl.rating * 0.6 + attrAvg * 0.4;
+    const score = effectiveRating * 0.6 + attrAvg * 0.4;
     totalWeight += w;
     totalScore += score * w;
 
-    const group = positionGroup(pl.position);
+    const group = positionGroup(slot.position);
     if (group === 'ATT') {
       attSum += score * w;
       attW += w;
@@ -100,7 +124,6 @@ export function teamStrength(players: (Player | null)[]): {
   }
 
   const overall = totalScore / totalWeight;
-  // Penalty for incomplete squads — each missing slot drags the rating down.
   const missing = 11 - filled.length;
   const penalty = missing * 2.2;
 
@@ -145,9 +168,7 @@ export function simulateMatch(
   const attackDelta = myAttack - oppStrength + homeBoost;
   const defenceDelta = myDefence - oppStrength;
 
-  // Expected goals for my team — centred near 1.4, scaled by attack edge.
   const xgFor = clamp(1.35 + attackDelta * 0.045 + gaussian() * 0.55, 0.15, 5.5);
-  // Expected goals against — centred near 1.25, reduced by defensive edge.
   const xgAgainst = clamp(1.25 - defenceDelta * 0.04 + gaussian() * 0.55, 0.1, 5.5);
 
   return {
@@ -181,12 +202,13 @@ function poisson(lambda: number): number {
  */
 export function simulateSeason(
   competitionId: string,
-  players: (Player | null)[],
+  slots: SquadSlot[],
   rng: () => number = Math.random,
 ): SimResult {
   const comp = getCompetition(competitionId);
   const matchCount = comp?.matches ?? 38;
-  const { overall, attack, defence } = teamStrength(players);
+  const teamCount = comp?.teamCount ?? 20;
+  const { overall, attack, defence } = teamStrength(slots);
 
   // Build opponent pool from the competition's clubs.
   const oppClubs: Club[] = Object.values(CLUB_MAP).filter(
@@ -202,10 +224,11 @@ export function simulateSeason(
   let losses = 0;
   let goalsFor = 0;
   let goalsAgainst = 0;
+  let cleanSheets = 0;
+  let failedToScore = 0;
 
   const isCup = comp?.type === 'cup';
 
-  // Seeded shuffle helper using the provided rng.
   const shuffle = <T,>(arr: T[]): T[] => {
     const a = [...arr];
     for (let i = a.length - 1; i > 0; i--) {
@@ -221,7 +244,6 @@ export function simulateSeason(
     const opp = opponents[i % opponents.length];
     const home = i % 2 === 0;
 
-    // In cup mode, opponents get progressively tougher as you advance.
     let oppStrength = opp.strength;
     if (isCup) {
       const progress = i / Math.max(1, matchCount - 1);
@@ -247,6 +269,9 @@ export function simulateSeason(
 
     goalsFor += gf;
     goalsAgainst += ga;
+    if (gf === 0) failedToScore += 1;
+    if (ga === 0) cleanSheets += 1;
+
     if (gf > ga) {
       wins += 1;
       points += 3;
@@ -255,26 +280,76 @@ export function simulateSeason(
       points += 1;
     } else {
       losses += 1;
-      if (isCup) break; // knocked out
+      if (isCup) break;
     }
   }
 
-  // Estimate final position.
-  const teams = isCup ? 32 : opponentPool.length || 20;
+  // Final position.
   const matchesPlayed = matches.length;
   let position: number;
   if (isCup) {
     if (losses === 0) {
-      position = 1; // won every round → champion
+      position = 1;
     } else {
-      // Knocked out in round `matchesPlayed`. Map to a bracket position:
-      // losing the final (last round) = 2, losing first round = ~teams.
       const bracket = Math.pow(2, matchCount - matchesPlayed + 1);
-      position = clamp(Math.round(bracket), 2, teams);
+      position = clamp(Math.round(bracket), 2, teamCount);
     }
   } else {
-    position = estimateLeaguePosition(points, overall, teams);
+    position = estimateLeaguePosition(points, overall, teamCount);
   }
+
+  // Extended stats
+  const goalDifference = goalsFor - goalsAgainst;
+  const goalsPerGame = matchesPlayed > 0 ? goalsFor / matchesPlayed : 0;
+  const concededPerGame = matchesPlayed > 0 ? goalsAgainst / matchesPlayed : 0;
+  const pointsPerGame = matchesPlayed > 0 ? points / matchesPlayed : 0;
+
+  // Biggest win / loss
+  let biggestWin: SimResult['biggestWin'] = null;
+  let biggestLoss: SimResult['biggestLoss'] = null;
+  let biggestWinDiff = 0;
+  let biggestLossDiff = 0;
+  for (const m of matches) {
+    const diff = m.goalsFor - m.goalsAgainst;
+    const score = `${m.goalsFor}-${m.goalsAgainst}`;
+    if (diff > 0 && diff > biggestWinDiff) {
+      biggestWinDiff = diff;
+      biggestWin = { opponentName: m.opponentName, opponentNameZh: m.opponentNameZh, score };
+    } else if (diff < 0 && -diff > biggestLossDiff) {
+      biggestLossDiff = -diff;
+      biggestLoss = { opponentName: m.opponentName, opponentNameZh: m.opponentNameZh, score };
+    }
+  }
+
+  // Streaks
+  let longestWinStreak = 0;
+  let currentWinStreak = 0;
+  let longestUnbeatenRun = 0;
+  let currentUnbeaten = 0;
+  for (const m of matches) {
+    const o = outcomeOf(m);
+    if (o === 'W') {
+      currentWinStreak += 1;
+      currentUnbeaten += 1;
+    } else {
+      longestWinStreak = Math.max(longestWinStreak, currentWinStreak);
+      currentWinStreak = 0;
+      if (o === 'D') {
+        currentUnbeaten += 1;
+      } else {
+        longestUnbeatenRun = Math.max(longestUnbeatenRun, currentUnbeaten);
+        currentUnbeaten = 0;
+      }
+    }
+  }
+  longestWinStreak = Math.max(longestWinStreak, currentWinStreak);
+  longestUnbeatenRun = Math.max(longestUnbeatenRun, currentUnbeaten);
+
+  // Form guide (last 5)
+  const formGuide: MatchOutcome[] = matches.slice(-5).map(outcomeOf);
+
+  // Grade
+  const grade = computeGrade(position, teamCount, pointsPerGame, isCup, losses);
 
   return {
     matches,
@@ -285,21 +360,54 @@ export function simulateSeason(
     goalsFor,
     goalsAgainst,
     position,
-    teams,
+    teams: teamCount,
     unbeaten: losses === 0,
     perfect: losses === 0 && draws === 0,
+    cleanSheets,
+    failedToScore,
+    biggestWin,
+    biggestLoss,
+    longestWinStreak,
+    longestUnbeatenRun,
+    goalsPerGame,
+    concededPerGame,
+    pointsPerGame,
+    goalDifference,
+    grade,
+    formGuide,
   };
+}
+
+function computeGrade(
+  position: number,
+  teams: number,
+  ppg: number,
+  isCup: boolean,
+  losses: number,
+): 'S' | 'A' | 'B' | 'C' | 'D' | 'F' {
+  if (isCup) {
+    if (position === 1 && losses === 0) return 'S';
+    if (position <= 2) return 'A';
+    if (position <= 4) return 'B';
+    if (position <= 8) return 'C';
+    if (position <= 16) return 'D';
+    return 'F';
+  }
+  const topPct = position / teams;
+  if (topPct <= 0.05 && ppg >= 2.0) return 'S';
+  if (topPct <= 0.15) return 'A';
+  if (topPct <= 0.35) return 'B';
+  if (topPct <= 0.55) return 'C';
+  if (topPct <= 0.8) return 'D';
+  return 'F';
 }
 
 /**
  * Estimate where a team with the given points & strength would finish in a league.
- * Models the rest of the league's point totals around the user's strength.
  */
 function estimateLeaguePosition(userPoints: number, userStrength: number, teams: number): number {
-  // Generate synthetic opponent point totals.
   const totals: number[] = [];
   for (let i = 0; i < teams - 1; i++) {
-    // Opponent strength varies; map to a plausible points total (0-100 range).
     const base = 40 + (Math.random() - 0.5) * 50 + (userStrength - 75) * 0.4;
     totals.push(clamp(base + gaussian() * 12, 5, 105));
   }
@@ -309,7 +417,7 @@ function estimateLeaguePosition(userPoints: number, userStrength: number, teams:
 }
 
 /** Human-readable outcome letter for a match. */
-export function outcomeOf(m: MatchResult): 'W' | 'D' | 'L' {
+export function outcomeOf(m: MatchResult): MatchOutcome {
   if (m.goalsFor > m.goalsAgainst) return 'W';
   if (m.goalsFor < m.goalsAgainst) return 'L';
   return 'D';
