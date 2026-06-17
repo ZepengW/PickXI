@@ -78,7 +78,7 @@ export const COMPETITIONS: Competition[] = [
     type: 'cup',
     matches: 7,
     seasons: [
-      '1994', '1998', '2002', '2006', '2010',
+      '1970', '1986', '1994', '1998', '2002', '2006', '2010',
       '2014', '2018', '2022',
     ],
     region: 'World',
@@ -86,6 +86,41 @@ export const COMPETITIONS: Competition[] = [
     accent: '#1a5e3a',
     blurb: 'Seven games to lift the trophy. Nations, not clubs.',
     blurbZh: '七场比赛举起大力神杯。国家荣誉，而非俱乐部。',
+  },
+  {
+    id: 'seriea',
+    name: 'Serie A',
+    nameZh: '意甲',
+    type: 'league',
+    matches: 38,
+    seasons: [
+      '1988-89', '1991-92', '1995-96', '1998-99', '2001-02',
+      '2002-03', '2003-04', '2006-07', '2010-11', '2015-16',
+      '2016-17', '2018-19', '2019-20', '2020-21', '2022-23',
+      '2023-24',
+    ],
+    region: 'Italy',
+    regionZh: '意大利',
+    accent: '#0066cc',
+    blurb: 'The tactical capital of world football. Catenaccio to fantasy.',
+    blurbZh: '世界足球的战术之都。从链式防守到十号位艺术。',
+  },
+  {
+    id: 'bundesliga',
+    name: 'Bundesliga',
+    nameZh: '德甲',
+    type: 'league',
+    matches: 34,
+    seasons: [
+      '1998-99', '2000-01', '2001-02', '2008-09', '2010-11',
+      '2011-12', '2012-13', '2013-14', '2015-16', '2018-19',
+      '2019-20', '2020-21', '2022-23', '2023-24',
+    ],
+    region: 'Germany',
+    regionZh: '德国',
+    accent: '#d20515',
+    blurb: 'Gegenpressing, yellow walls, and 34 games of pure intensity.',
+    blurbZh: '高位压迫、黄色之墙，34 场纯粹激情的较量。',
   },
 ];
 
@@ -134,6 +169,20 @@ export const CLUBS: Club[] = [
   { id: 'ita', name: 'Italy', nameZh: '意大利', shortName: 'Italy', shortNameZh: '意大利', color: '#0066cc', color2: '#ffffff', competitionId: 'wc', strength: 85 },
   { id: 'ned', name: 'Netherlands', nameZh: '荷兰', shortName: 'Netherlands', shortNameZh: '荷兰', color: '#ff6600', color2: '#000000', competitionId: 'wc', strength: 85 },
   { id: 'por', name: 'Portugal', nameZh: '葡萄牙', shortName: 'Portugal', shortNameZh: '葡萄牙', color: '#006600', color2: '#da291c', competitionId: 'wc', strength: 85 },
+
+  // --- Serie A ---
+  { id: 'juv', name: 'Juventus', nameZh: '尤文图斯', shortName: 'Juve', shortNameZh: '尤文', color: '#000000', color2: '#ffffff', competitionId: 'seriea', strength: 84 },
+  { id: 'mil', name: 'AC Milan', nameZh: 'AC米兰', shortName: 'Milan', shortNameZh: '米兰', color: '#fb090b', color2: '#000000', competitionId: 'seriea', strength: 83 },
+  { id: 'int', name: 'Inter Milan', nameZh: '国际米兰', shortName: 'Inter', shortNameZh: '国米', color: '#0068a8', color2: '#000000', competitionId: 'seriea', strength: 84 },
+  { id: 'nap', name: 'Napoli', nameZh: '那不勒斯', shortName: 'Napoli', shortNameZh: '那不勒斯', color: '#12a0d7', color2: '#ffffff', competitionId: 'seriea', strength: 83 },
+  { id: 'rom', name: 'AS Roma', nameZh: '罗马', shortName: 'Roma', shortNameZh: '罗马', color: '#8e1f2f', color2: '#f0bc42', competitionId: 'seriea', strength: 81 },
+  { id: 'laz', name: 'Lazio', nameZh: '拉齐奥', shortName: 'Lazio', shortNameZh: '拉齐奥', color: '#87d8f7', color2: '#ffffff', competitionId: 'seriea', strength: 80 },
+
+  // --- Bundesliga ---
+  { id: 'bay', name: 'Bayern München', nameZh: '拜仁慕尼黑', shortName: 'Bayern', shortNameZh: '拜仁', color: '#dc052d', color2: '#0066b2', competitionId: 'bundesliga', strength: 88 },
+  { id: 'dor', name: 'Borussia Dortmund', nameZh: '多特蒙德', shortName: 'Dortmund', shortNameZh: '多特', color: '#fde100', color2: '#000000', competitionId: 'bundesliga', strength: 83 },
+  { id: 'lev', name: 'Bayer Leverkusen', nameZh: '勒沃库森', shortName: 'Leverkusen', shortNameZh: '药厂', color: '#e32221', color2: '#000000', competitionId: 'bundesliga', strength: 82 },
+  { id: 'sge', name: 'Eintracht Frankfurt', nameZh: '法兰克福', shortName: 'Frankfurt', shortNameZh: '法兰', color: '#e1000f', color2: '#000000', competitionId: 'bundesliga', strength: 79 },
 ];
 
 export const CLUB_MAP: Record<string, Club> = Object.fromEntries(

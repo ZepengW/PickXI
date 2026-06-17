@@ -1,6 +1,15 @@
 import type { Player } from '../../types';
 import { p } from './_helpers';
 
+// Data sources (fan-curated, based on publicly available information):
+// - SoFIFA.com (EA FC / FIFA player attributes, historical snapshots)
+// - FM Inside / Sortitoutsi (Football Manager player data exports)
+// - Transfermarkt (player profiles, nationalities, squad numbers)
+// - Wikipedia (historical squad rosters)
+// Ratings are an independent interpretation for a fan-made game, not affiliated
+// with any data provider. Attributes follow the six-axis model:
+// PAC (pace), SHO (shooting), PAS (passing), DRI (dribbling), DEF (defending), PHY (physical).
+
 // English Premier League — iconic squads from 1992 to today.
 export const EPL_PLAYERS: Player[] = [
   // ===== Manchester United 1998-99 (Treble) =====

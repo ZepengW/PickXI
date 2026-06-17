@@ -6,6 +6,8 @@ import { LALIGA_PLAYERS } from './players/laliga';
 import { CSL_PLAYERS } from './players/csl';
 import { UCL_PLAYERS } from './players/ucl';
 import { WC_PLAYERS } from './players/worldcup';
+import { SERIEA_PLAYERS } from './players/seriea';
+import { BUNDESLIGA_PLAYERS } from './players/bundesliga';
 
 export const ALL_PLAYERS: Player[] = [
   ...EPL_PLAYERS,
@@ -13,6 +15,8 @@ export const ALL_PLAYERS: Player[] = [
   ...CSL_PLAYERS,
   ...UCL_PLAYERS,
   ...WC_PLAYERS,
+  ...SERIEA_PLAYERS,
+  ...BUNDESLIGA_PLAYERS,
 ];
 
 export { COMPETITIONS, COMPETITION_MAP, CLUBS, CLUB_MAP, clubsForCompetition, FORMATIONS, getFormation };

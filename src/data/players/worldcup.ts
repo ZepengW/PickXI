@@ -1,6 +1,15 @@
 import type { Player } from '../../types';
 import { p } from './_helpers';
 
+// Data sources (fan-curated, based on publicly available information):
+// - SoFIFA.com (EA FC / FIFA player attributes, historical snapshots)
+// - FM Inside / Sortitoutsi (Football Manager player data exports)
+// - Transfermarkt (player profiles, nationalities, squad numbers)
+// - Wikipedia (historical squad rosters)
+// Ratings are an independent interpretation for a fan-made game, not affiliated
+// with any data provider. Attributes follow the six-axis model:
+// PAC (pace), SHO (shooting), PAS (passing), DRI (dribbling), DEF (defending), PHY (physical).
+
 // World Cup — iconic national sides.
 export const WC_PLAYERS: Player[] = [
   // ===== Brazil 2002 (Champions) =====
@@ -106,4 +115,43 @@ export const WC_PLAYERS: Player[] = [
   p('Cristiano Ronaldo', 'C罗', 'ST', ['ST', 'LW', 'RW'], 'por', '2018', 'wc', 94, [85, 93, 82, 88, 60, 82], 'Portugal', '葡萄牙', 7),
   p('Gonçalo Guedes', '格德斯', 'LW', ['LW', 'ST'], 'por', '2018', 'wc', 82, [88, 76, 74, 80, 45, 70], 'Portugal', '葡萄牙', 17),
   p('André Silva', '安德烈·席尔瓦', 'ST', ['ST', 'CF'], 'por', '2018', 'wc', 81, [78, 80, 70, 74, 45, 78], 'Portugal', '葡萄牙', 9),
+
+  // ===== Brazil 1970 (Champions — the greatest side ever) =====
+  p('Félix', '费利克斯', 'GK', ['GK'], 'bra', '1970', 'wc', 82, [45, 20, 50, 45, 82, 78], 'Brazil', '巴西', 1),
+  p('Carlos Alberto', '卡洛斯·阿尔贝托', 'RB', ['RB', 'RWB'], 'bra', '1970', 'wc', 86, [82, 60, 78, 76, 80, 78], 'Brazil', '巴西', 4),
+  p('Britto', '布里托', 'CB', ['CB'], 'bra', '1970', 'wc', 82, [68, 40, 65, 66, 85, 82], 'Brazil', '巴西', 5),
+  p('Wilson Piazza', '皮亚扎', 'CB', ['CB', 'CDM'], 'bra', '1970', 'wc', 83, [72, 50, 72, 70, 84, 82], 'Brazil', '巴西', 6),
+  p('Everaldo', '埃韦拉尔多', 'LB', ['LB', 'LWB'], 'bra', '1970', 'wc', 82, [80, 55, 72, 74, 78, 76], 'Brazil', '巴西', 2),
+  p('Clodoaldo', '克洛多阿尔多', 'CDM', ['CDM', 'CM'], 'bra', '1970', 'wc', 84, [76, 65, 82, 82, 76, 74], 'Brazil', '巴西', 3),
+  p('Gérson', '热尔松', 'CM', ['CM', 'CAM'], 'bra', '1970', 'wc', 85, [72, 78, 88, 82, 68, 72], 'Brazil', '巴西', 7),
+  p('Jairzinho', '雅伊尔津霍', 'RW', ['RW', 'LW', 'ST'], 'bra', '1970', 'wc', 87, [88, 82, 78, 84, 56, 76], 'Brazil', '巴西', 9),
+  p('Tostão', '托斯唐', 'CF', ['CF', 'ST'], 'bra', '1970', 'wc', 86, [78, 82, 82, 84, 52, 72], 'Brazil', '巴西', 8),
+  p('Pelé', '贝利', 'ST', ['ST', 'CF', 'CAM'], 'bra', '1970', 'wc', 95, [84, 88, 90, 92, 70, 80], 'Brazil', '巴西', 10),
+  p('Rivellino', '里维利诺', 'LW', ['LW', 'CAM', 'CF'], 'bra', '1970', 'wc', 88, [80, 84, 86, 88, 60, 74], 'Brazil', '巴西', 11),
+
+  // ===== Argentina 1986 (Champions — Maradona's tournament) =====
+  p('Nery Pumpido', '蓬皮多', 'GK', ['GK'], 'arg', '1986', 'wc', 82, [48, 22, 52, 48, 82, 80], 'Argentina', '阿根廷', 1),
+  p('Oscar Ruggeri', '鲁杰里', 'CB', ['CB'], 'arg', '1986', 'wc', 85, [72, 50, 70, 70, 88, 86], 'Argentina', '阿根廷', 2),
+  p('José Luis Brown', '布朗', 'CB', ['CB'], 'arg', '1986', 'wc', 82, [68, 45, 66, 66, 85, 84], 'Argentina', '阿根廷', 3),
+  p('Héctor Enrique', '恩里克', 'RB', ['RB', 'RM'], 'arg', '1986', 'wc', 81, [78, 55, 74, 76, 76, 72], 'Argentina', '阿根廷', 4),
+  p('Julio Olarticoechea', '奥拉蒂科切亚', 'LB', ['LB', 'LWB'], 'arg', '1986', 'wc', 82, [78, 50, 72, 74, 80, 78], 'Argentina', '阿根廷', 5),
+  p('Ricardo Giusti', '朱斯蒂', 'CM', ['CM', 'CDM'], 'arg', '1986', 'wc', 82, [70, 62, 78, 74, 78, 76], 'Argentina', '阿根廷', 6),
+  p('Sergio Batista', '巴蒂斯塔', 'CDM', ['CDM', 'CM'], 'arg', '1986', 'wc', 83, [68, 55, 80, 74, 82, 78], 'Argentina', '阿根廷', 7),
+  p('Jorge Burruchaga', '布鲁查加', 'RW', ['RW', 'CAM', 'ST'], 'arg', '1986', 'wc', 85, [82, 78, 82, 84, 56, 72], 'Argentina', '阿根廷', 8),
+  p('Diego Maradona', '马拉多纳', 'CAM', ['CAM', 'CF', 'ST'], 'arg', '1986', 'wc', 95, [82, 88, 92, 96, 50, 74], 'Argentina', '阿根廷', 10),
+  p('Jorge Valdano', '巴尔达诺', 'ST', ['ST', 'CF'], 'arg', '1986', 'wc', 85, [78, 84, 80, 80, 52, 76], 'Argentina', '阿根廷', 9),
+  p('Oscar Garré', '加雷', 'CB', ['CB', 'RB'], 'arg', '1986', 'wc', 81, [70, 42, 66, 66, 84, 82], 'Argentina', '阿根廷', 11),
+
+  // ===== Netherlands 1974 (Total Football — Cruyff) =====
+  p('Jan Jongbloed', '容布洛德', 'GK', ['GK'], 'ned', '1974', 'wc', 81, [45, 20, 50, 45, 82, 78], 'Netherlands', '荷兰', 8),
+  p('Wim Suurbier', '苏尔比尔', 'RB', ['RB', 'RWB'], 'ned', '1974', 'wc', 83, [80, 55, 74, 76, 80, 76], 'Netherlands', '荷兰', 2),
+  p('Arie Haan', '阿里·汉', 'CB', ['CB', 'CM'], 'ned', '1974', 'wc', 84, [76, 70, 82, 78, 80, 78], 'Netherlands', '荷兰', 3),
+  p('Ruud Krol', '克洛尔', 'CB', ['CB', 'LB'], 'ned', '1974', 'wc', 87, [78, 65, 82, 78, 88, 84], 'Netherlands', '荷兰', 4),
+  p('Wim Jansen', '扬森', 'CDM', ['CDM', 'CM'], 'ned', '1974', 'wc', 84, [74, 65, 82, 78, 82, 80], 'Netherlands', '荷兰', 6),
+  p('Johan Neeskens', '内斯肯斯', 'CM', ['CM', 'CAM', 'CDM'], 'ned', '1974', 'wc', 89, [78, 80, 88, 84, 72, 76], 'Netherlands', '荷兰', 13),
+  p('Willem van Hanegem', '范哈内亨', 'CM', ['CM', 'CAM'], 'ned', '1974', 'wc', 86, [72, 78, 88, 82, 70, 74], 'Netherlands', '荷兰', 10),
+  p('Johnny Rep', '雷普', 'RW', ['RW', 'LW', 'ST'], 'ned', '1974', 'wc', 85, [84, 80, 78, 80, 56, 72], 'Netherlands', '荷兰', 7),
+  p('Rob Rensenbrink', '伦森布林克', 'LW', ['LW', 'ST', 'CF'], 'ned', '1974', 'wc', 86, [84, 82, 80, 84, 54, 72], 'Netherlands', '荷兰', 5),
+  p('Johan Cruyff', '克鲁伊夫', 'ST', ['ST', 'CF', 'CAM'], 'ned', '1974', 'wc', 94, [88, 85, 90, 94, 60, 76], 'Netherlands', '荷兰', 14),
+  p('Piet Keizer', '凯泽尔', 'LW', ['LW', 'LM', 'CF'], 'ned', '1974', 'wc', 84, [80, 76, 82, 84, 56, 70], 'Netherlands', '荷兰', 9),
 ];

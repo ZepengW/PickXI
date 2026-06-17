@@ -1,6 +1,15 @@
 import type { Player } from '../../types';
 import { p } from './_helpers';
 
+// Data sources (fan-curated, based on publicly available information):
+// - SoFIFA.com (EA FC / FIFA player attributes, historical snapshots)
+// - FM Inside / Sortitoutsi (Football Manager player data exports)
+// - Transfermarkt (player profiles, nationalities, squad numbers)
+// - Wikipedia (historical squad rosters)
+// Ratings are an independent interpretation for a fan-made game, not affiliated
+// with any data provider. Attributes follow the six-axis model:
+// PAC (pace), SHO (shooting), PAS (passing), DRI (dribbling), DEF (defending), PHY (physical).
+
 // Champions League — European elite sides (EPL/La Liga clubs already have data).
 export const UCL_PLAYERS: Player[] = [
   // ===== Bayern München 2012-13 (treble) =====

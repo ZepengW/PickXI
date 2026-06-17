@@ -1,7 +1,16 @@
 import type { Player } from '../../types';
 import { p } from './_helpers';
 
-// Chinese Super League — the golden era.
+// Data sources (fan-curated, based on publicly available information):
+// - SoFIFA.com (EA FC / FIFA player attributes, historical snapshots)
+// - FM Inside / Sortitoutsi (Football Manager player data exports)
+// - Transfermarkt (player profiles, nationalities, squad numbers)
+// - Wikipedia (historical squad rosters)
+// Ratings are an independent interpretation for a fan-made game, not affiliated
+// with any data provider. Attributes follow the six-axis model:
+// PAC (pace), SHO (shooting), PAS (passing), DRI (dribbling), DEF (defending), PHY (physical).
+
+// Chinese Super League — golden era squads.
 export const CSL_PLAYERS: Player[] = [
   // ===== Guangzhou Evergrande 2013 (ACL champions) =====
   p('Zeng Cheng', '曾诚', 'GK', ['GK'], 'gzg', '2013', 'csl', 76, [50, 25, 55, 52, 76, 74], 'China', '中国', 19),
