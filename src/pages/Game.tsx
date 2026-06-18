@@ -259,6 +259,7 @@ function DraftView() {
 
   const [simulating, setSimulating] = useState(false);
   const [showFormationPicker, setShowFormationPicker] = useState(false);
+  const [selectedSlotId, setSelectedSlotId] = useState<string | null>(null);
   const filled = filledCount(slots);
   const complete = isComplete(slots);
 
@@ -284,6 +285,33 @@ function DraftView() {
       setSimulating(false);
     }, 600);
   }
+
+  function handleSelectSlot(slotId: string) {
+    if (pendingPlayer) {
+      game.placePlayer(slotId);
+      return;
+    }
+    // Toggle selection for position swapping
+    if (selectedSlotId === slotId) {
+      setSelectedSlotId(null);
+    } else if (slotId === '') {
+      // Deselect
+      setSelectedSlotId(null);
+    } else {
+      const slot = slots.find((s) => s.slotId === slotId);
+      if (slot?.player) {
+        setSelectedSlotId(slotId);
+      }
+    }
+  }
+
+  function handleMovePlayer(fromSlotId: string, toSlotId: string) {
+    game.movePlayer(fromSlotId, toSlotId);
+    setSelectedSlotId(null);
+  }
+
+  // Only allow reroll in easy mode
+  const canReroll = difficulty === 'easy';
 
   return (
     <motion.div
@@ -392,10 +420,10 @@ function DraftView() {
                 formationId={formationId}
                 slots={slots}
                 pendingPlayer={pendingPlayer}
-                onSelectSlot={(id) => {
-                  if (pendingPlayer) game.placePlayer(id);
-                }}
+                selectedSlotId={selectedSlotId}
+                onSelectSlot={handleSelectSlot}
                 onRemovePlayer={(id) => game.removePlayer(id)}
+                onMovePlayer={handleMovePlayer}
                 showRatings={diffCfg.showRatings}
                 showPosition={diffCfg.showPosition}
               />
@@ -406,12 +434,16 @@ function DraftView() {
             {pendingPlayer
               ? lang === 'zh'
                 ? diffCfg.showPosition
-                  ? `将 ${pendingPlayer.nameZh} 放到任意位置。绿色=最佳，黄色=可踢(-5)，橙色=客串(-15)`
+                  ? `将 ${pendingPlayer.nameZh} 放到任意位置。绿色=最佳，黄色=可踢，橙色=客串，数字为减分`
                   : `将 ${pendingPlayer.nameZh} 放到任意位置。不同位置有不同分数加成。`
                 : `Place ${pendingPlayer.name} anywhere. Different positions give different score bonuses.`
-              : lang === 'zh'
-                ? '转盘→选球员→放到任意位置。点击已放球员可移除。'
-                : 'Spin → pick → place anywhere. Tap a placed player to remove.'}
+              : selectedSlotId
+                ? lang === 'zh'
+                  ? '点击其他位置来移动球员，或点击"取消选择"。'
+                  : 'Click another position to move the player, or click "Deselect".'
+                : lang === 'zh'
+                  ? '转盘→选球员→放到任意位置。点击已放球员可选中并移动。'
+                  : 'Spin → pick → place anywhere. Tap a placed player to select and move.'}
           </p>
 
           {/* Bench */}
@@ -428,7 +460,8 @@ function DraftView() {
           )}
         </div>
 
-        {/* Right: wheel or squad picker */}
+        {/* Right: wheel or squad picker — hidden when XI is complete */}
+        {!complete && (
         <div className="rounded-2xl border border-ink-800 bg-ink-900/40 p-4 sm:p-5 flex flex-col min-h-0">
           <AnimatePresence mode="wait">
             {pendingPlayer ? (
@@ -528,16 +561,19 @@ function DraftView() {
                   clubId={spin.clubId}
                   season={spin.season}
                 />
-                <button
-                  onClick={() => game.clearSpin()}
-                  className="mt-3 w-full py-2.5 rounded-full border border-ink-700 text-ink-300 text-sm font-medium hover:border-ink-500 hover:text-ink-100 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
-                >
-                  {t('reroll')}
-                </button>
+                {canReroll && (
+                  <button
+                    onClick={() => game.clearSpin()}
+                    className="mt-3 w-full py-2.5 rounded-full border border-ink-700 text-ink-300 text-sm font-medium hover:border-ink-500 hover:text-ink-100 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+                  >
+                    {t('reroll')}
+                  </button>
+                )}
               </motion.div>
             )}
           </AnimatePresence>
         </div>
+        )}
       </div>
     </motion.div>
   );

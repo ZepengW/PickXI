@@ -3,7 +3,7 @@ import { persist } from 'zustand/middleware';
 import type { Difficulty, Lang, Player, SimResult, SquadSlot } from '../types';
 import { DIFFICULTY_CONFIGS } from '../types';
 import { getFormation, availableSeasons, getCompetition } from '../data';
-import { simulateSeason, positionFit } from '../engine/simulation';
+import { simulateSeason, positionFit, positionPenalty } from '../engine/simulation';
 
 export type Phase = 'setup' | 'draft' | 'sim' | 'results';
 
@@ -58,6 +58,8 @@ interface GameState {
   unplacePlayer: (slotId: string) => void;
   /** Place a bench player onto a slot. */
   placeBenchPlayer: (player: Player, slotId: string) => void;
+  /** Move a player from one slot to another (swap if target occupied). */
+  movePlayer: (fromSlotId: string, toSlotId: string) => void;
 
   runSim: () => void;
   reset: () => void;
@@ -72,6 +74,7 @@ function emptySlots(formationId: string): SquadSlot[] {
     position: s.position,
     player: null,
     positionFit: null,
+    positionPenalty: 0,
   }));
 }
 
@@ -90,6 +93,7 @@ function autoPlace(
     position: s.position,
     player: null,
     positionFit: null,
+    positionPenalty: 0,
   }));
   const bench: Player[] = [];
 
@@ -102,6 +106,7 @@ function autoPlace(
       if (positionFit(player, slot.position) === 'primary') {
         slot.player = player;
         slot.positionFit = 'primary';
+        slot.positionPenalty = 0;
         placed = true;
         break;
       }
@@ -113,6 +118,7 @@ function autoPlace(
       if (positionFit(player, slot.position) === 'secondary') {
         slot.player = player;
         slot.positionFit = 'secondary';
+        slot.positionPenalty = positionPenalty(player, slot.position);
         placed = true;
         break;
       }
@@ -123,6 +129,7 @@ function autoPlace(
       if (slot.player) continue;
       slot.player = player;
       slot.positionFit = 'other';
+      slot.positionPenalty = positionPenalty(player, slot.position);
       placed = true;
       break;
     }
@@ -224,10 +231,11 @@ export const useGame = create<GameState>()(
         if (!slot) return;
 
         const fit = positionFit(pendingPlayer, slot.position);
+        const penalty = positionPenalty(pendingPlayer, slot.position);
 
         const newSlots = slots.map((s) => {
-          if (s.player?.id === pendingPlayer.id) return { ...s, player: null, positionFit: null };
-          if (s.slotId === slotId) return { ...s, player: pendingPlayer, positionFit: fit };
+          if (s.player?.id === pendingPlayer.id) return { ...s, player: null, positionFit: null, positionPenalty: 0 };
+          if (s.slotId === slotId) return { ...s, player: pendingPlayer, positionFit: fit, positionPenalty: penalty };
           return s;
         });
 
@@ -252,7 +260,7 @@ export const useGame = create<GameState>()(
         const removed = slot.player;
         set({
           slots: slots.map((s) =>
-            s.slotId === slotId ? { ...s, player: null, positionFit: null } : s,
+            s.slotId === slotId ? { ...s, player: null, positionFit: null, positionPenalty: 0 } : s,
           ),
           draftedIds: draftedIds.filter((id) => id !== removed!.id),
           bench,
@@ -266,7 +274,7 @@ export const useGame = create<GameState>()(
         const player = slot.player;
         set({
           slots: slots.map((s) =>
-            s.slotId === slotId ? { ...s, player: null, positionFit: null } : s,
+            s.slotId === slotId ? { ...s, player: null, positionFit: null, positionPenalty: 0 } : s,
           ),
           bench: [...bench, player],
         });
@@ -278,6 +286,7 @@ export const useGame = create<GameState>()(
         if (!slot) return;
 
         const fit = positionFit(player, slot.position);
+        const penalty = positionPenalty(player, slot.position);
 
         const displaced = slot.player;
         const newBench = [
@@ -287,10 +296,41 @@ export const useGame = create<GameState>()(
 
         set({
           slots: slots.map((s) =>
-            s.slotId === slotId ? { ...s, player, positionFit: fit } : s,
+            s.slotId === slotId ? { ...s, player, positionFit: fit, positionPenalty: penalty } : s,
           ),
           bench: newBench,
         });
+      },
+
+      movePlayer: (fromSlotId, toSlotId) => {
+        const { slots } = get();
+        const fromSlot = slots.find((s) => s.slotId === fromSlotId);
+        const toSlot = slots.find((s) => s.slotId === toSlotId);
+        if (!fromSlot?.player || !toSlot) return;
+
+        const movingPlayer = fromSlot.player;
+        const displacedPlayer = toSlot.player;
+
+        // Calculate new fits and penalties
+        const movingFit = positionFit(movingPlayer, toSlot.position);
+        const movingPenalty = positionPenalty(movingPlayer, toSlot.position);
+
+        const newSlots = slots.map((s) => {
+          if (s.slotId === fromSlotId) {
+            if (displacedPlayer) {
+              const dispFit = positionFit(displacedPlayer, fromSlot.position);
+              const dispPenalty = positionPenalty(displacedPlayer, fromSlot.position);
+              return { ...s, player: displacedPlayer, positionFit: dispFit, positionPenalty: dispPenalty };
+            }
+            return { ...s, player: null, positionFit: null, positionPenalty: 0 };
+          }
+          if (s.slotId === toSlotId) {
+            return { ...s, player: movingPlayer, positionFit: movingFit, positionPenalty: movingPenalty };
+          }
+          return s;
+        });
+
+        set({ slots: newSlots });
       },
 
       runSim: () => {

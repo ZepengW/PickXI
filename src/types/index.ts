@@ -99,6 +99,8 @@ export interface SquadSlot {
   player: Player | null;
   /** How well the player fits this slot. null = empty slot. */
   positionFit: 'primary' | 'secondary' | 'other' | null;
+  /** Actual rating penalty for this position assignment. 0 = primary. */
+  positionPenalty: number;
 }
 
 export interface MatchResult {

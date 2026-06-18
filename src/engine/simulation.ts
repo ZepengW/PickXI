@@ -57,23 +57,76 @@ export function positionGroup(pos: Position): PositionGroup {
 // ---- Position fit -----------------------------------------------------------
 
 /**
- * Determine how well a player fits a slot position.
- * - 'primary': the slot position is the player's primary position
- * - 'secondary': the slot position is in the player's positions list but not primary
- * - 'other': the player can play here but not ideally (out of position)
- * Any player can play any position — only the rating penalty differs.
+ * Position compatibility matrix inspired by FIFA/FM.
+ *
+ * For each (fromPos, toPos) pair, defines a penalty:
+ *   0  = natural / primary — no penalty
+ *   3  = very comfortable — e.g. CM→CDM, ST→CF
+ *   5  = comfortable — e.g. CAM→CM, CB→CDM
+ *   8  = can play but uncomfortable — e.g. LW→ST, CM→CAM
+ *   12 = significantly out of position — e.g. ST→CM, CB→LB
+ *   18 = completely out of position — e.g. GK→ST, ST→CB
+ *
+ * Only non-trivial entries are listed; missing pairs default to 18.
+ * A player's `positions` array still overrides: if the slot position is
+ * in the player's `positions` list, the penalty is capped at 5.
  */
-export function positionFit(player: Player, slotPosition: Position): 'primary' | 'secondary' | 'other' {
+const POS_COMPAT: Partial<Record<Position, Partial<Record<Position, number>>>> = {
+  // --- GK ---
+  GK: { GK: 0 },
+  // --- Defenders ---
+  CB: { CB: 0, CDM: 5, LB: 12, RB: 12, LWB: 12, RWB: 12 },
+  LB: { LB: 0, LWB: 3, CB: 8, LM: 12, LW: 12 },
+  RB: { RB: 0, RWB: 3, CB: 8, RM: 12, RW: 12 },
+  LWB: { LWB: 0, LB: 3, LM: 8, LW: 12, CB: 12 },
+  RWB: { RWB: 0, RB: 3, RM: 8, RW: 12, CB: 12 },
+  // --- Midfielders ---
+  CDM: { CDM: 0, CM: 3, CB: 8, CAM: 8 },
+  CM: { CM: 0, CDM: 3, CAM: 5, LM: 8, RM: 8 },
+  CAM: { CAM: 0, CM: 5, CF: 5, CDM: 12, LW: 8, RW: 8, ST: 12 },
+  LM: { LM: 0, LW: 3, RM: 8, CM: 8, LB: 12, LWB: 12 },
+  RM: { RM: 0, RW: 3, LM: 8, CM: 8, RB: 12, RWB: 12 },
+  // --- Attackers ---
+  LW: { LW: 0, LM: 3, RW: 5, CF: 8, ST: 8, CAM: 8 },
+  RW: { RW: 0, RM: 3, LW: 5, CF: 8, ST: 8, CAM: 8 },
+  CF: { CF: 0, ST: 3, CAM: 5, LW: 12, RW: 12 },
+  ST: { ST: 0, CF: 3, LW: 8, RW: 8, CAM: 12 },
+};
+
+/**
+ * Determine how well a player fits a slot position.
+ * Returns a fit category and the actual penalty value.
+ *
+ * The penalty is derived from the compatibility matrix, but if the slot
+ * position is in the player's `positions` list (secondary position),
+ * the penalty is capped at 5 — a player who is listed as able to play
+ * a position should never be penalised as harshly as someone who can't.
+ */
+export function positionFit(
+  player: Player,
+  slotPosition: Position,
+): 'primary' | 'secondary' | 'other' {
   if (player.position === slotPosition) return 'primary';
   if (player.positions.includes(slotPosition)) return 'secondary';
   return 'other';
 }
 
 /** Rating penalty applied when a player is out of position. */
-export function positionPenalty(fit: 'primary' | 'secondary' | 'other' | null): number {
-  if (fit === 'primary') return 0;
-  if (fit === 'secondary') return 5;
-  return 15; // 'other' or null (treated as out of position)
+export function positionPenalty(
+  player: Player,
+  slotPosition: Position,
+): number {
+  if (player.position === slotPosition) return 0;
+
+  // If the slot position is in the player's positions list (secondary),
+  // use a mild penalty (0-5 range from compat matrix, capped at 5).
+  const isSecondary = player.positions.includes(slotPosition);
+  const compatPenalty = POS_COMPAT[player.position]?.[slotPosition] ?? 18;
+
+  if (isSecondary) {
+    return Math.min(compatPenalty, 5);
+  }
+  return compatPenalty;
 }
 
 // ---- Team strength ----------------------------------------------------------
@@ -105,7 +158,7 @@ export function teamStrength(slots: SquadSlot[]): {
   for (const slot of filled) {
     const pl = slot.player!;
     const w = POSITION_WEIGHT[slot.position] ?? 1;
-    const penalty = positionPenalty(slot.positionFit);
+    const penalty = positionPenalty(pl, slot.position);
     const effectiveRating = Math.max(30, pl.rating - penalty);
     const attrAvg = avgAttr(pl.attr);
     const score = effectiveRating * 0.6 + attrAvg * 0.4;

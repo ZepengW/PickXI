@@ -2,7 +2,7 @@ import { motion } from 'framer-motion';
 import type { Player, SquadSlot } from '../types';
 import { getFormation } from '../data';
 import { useLang } from '../i18n/useLang';
-import { positionGroup, positionFit } from '../engine/simulation';
+import { positionGroup, positionFit, positionPenalty } from '../engine/simulation';
 
 const GROUP_COLOR: Record<string, string> = {
   GK: '#f5c542',
@@ -18,6 +18,7 @@ interface PitchProps {
   selectedSlotId?: string | null;
   onSelectSlot?: (slotId: string) => void;
   onRemovePlayer?: (slotId: string) => void;
+  onMovePlayer?: (fromSlotId: string, toSlotId: string) => void;
   showRatings?: boolean;
   /** Show position recommendation highlights (primary/secondary/other). */
   showPosition?: boolean;
@@ -31,6 +32,7 @@ export default function Pitch({
   selectedSlotId,
   onSelectSlot,
   onRemovePlayer,
+  onMovePlayer,
   showRatings = true,
   showPosition = true,
   compact = false,
@@ -86,9 +88,15 @@ export default function Pitch({
         const color = GROUP_COLOR[group];
         const label = fs.position;
 
+        // When a slot is selected (has a player), clicking another slot moves the player
+        const isMoveTarget = !placing && selectedSlotId && selectedSlotId !== fs.id;
+
         const fit = placing && pendingPlayer
           ? positionFit(pendingPlayer, fs.position)
           : null;
+        const fitPenalty = placing && pendingPlayer
+          ? positionPenalty(pendingPlayer, fs.position)
+          : 0;
         // When showPosition is off (divine difficulty), don't color-code slots.
         const isPrimary = showPosition && fit === 'primary';
         const isSecondary = showPosition && fit === 'secondary';
@@ -101,8 +109,14 @@ export default function Pitch({
           <motion.button
             key={fs.id}
             type="button"
-            disabled={!clickable}
-            onClick={() => clickable && onSelectSlot?.(fs.id)}
+            disabled={!clickable && !isMoveTarget}
+            onClick={() => {
+              if (isMoveTarget && onMovePlayer) {
+                onMovePlayer(selectedSlotId, fs.id);
+              } else if (clickable) {
+                onSelectSlot?.(fs.id);
+              }
+            }}
             initial={{ opacity: 0, scale: 0.6 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: 0.15 + idx * 0.04, type: 'spring', stiffness: 200 }}
@@ -147,12 +161,12 @@ export default function Pitch({
             className={`absolute flex flex-col items-center justify-center rounded-full font-mono font-bold ${
               compact ? 'w-10 h-10 text-[10px]' : 'w-14 h-14 sm:w-16 sm:h-16 text-xs'
             } ${
-              clickable ? 'cursor-pointer hover:scale-110' : 'cursor-default'
+              clickable || isMoveTarget ? 'cursor-pointer hover:scale-110' : 'cursor-default'
             } ${selected ? 'ring-2 ring-accent ring-offset-2 ring-offset-pitch-700 scale-110 z-10' : ''} ${
               isPrimary ? 'ring-2 ring-green-400 animate-pulse z-10' : ''
             } ${isSecondary ? 'ring-2 ring-yellow-400 z-10' : ''} ${
               isOther ? 'ring-2 ring-orange-400/70 z-10' : ''
-            }`}
+            } ${isMoveTarget ? 'ring-2 ring-sky-400 z-10' : ''}`}
             title={player ? `${player.name} (${label})` : label}
             aria-label={
               occupied
@@ -166,9 +180,23 @@ export default function Pitch({
                 showRatings={showRatings}
                 compact={compact}
                 positionFit={slot?.positionFit ?? null}
+                positionPenalty={slot?.positionPenalty ?? 0}
                 positionLabel={label}
                 lang={lang}
               />
+            ) : placing ? (
+              <div className="flex flex-col items-center justify-center leading-none text-white">
+                <span className="text-white/70 font-mono font-bold tracking-tight leading-none">
+                  {label}
+                </span>
+                {showPosition && fitPenalty > 0 && (
+                  <span className={`text-[8px] font-mono mt-0.5 ${
+                    fitPenalty <= 3 ? 'text-green-300' : fitPenalty <= 5 ? 'text-yellow-300' : fitPenalty <= 8 ? 'text-orange-300' : 'text-red-300'
+                  }`}>
+                    -{fitPenalty}
+                  </span>
+                )}
+              </div>
             ) : (
               <span className="text-white/70 font-mono font-bold tracking-tight leading-none">
                 {label}
@@ -183,12 +211,20 @@ export default function Pitch({
         const sel = slots.find((s) => s.slotId === selectedSlotId);
         if (!sel?.player) return null;
         return (
-          <button
-            onClick={() => onRemovePlayer(selectedSlotId)}
-            className="absolute bottom-2 left-1/2 -translate-x-1/2 px-3 py-1 text-xs font-medium bg-ink-900/90 text-ink-200 rounded-full border border-ink-600 hover:border-red-500 hover:text-red-400 transition-colors z-20"
-          >
-            {lang === 'zh' ? '移除' : 'Remove'}
-          </button>
+          <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-2 z-20">
+            <button
+              onClick={() => onRemovePlayer(selectedSlotId)}
+              className="px-3 py-1 text-xs font-medium bg-ink-900/90 text-ink-200 rounded-full border border-ink-600 hover:border-red-500 hover:text-red-400 transition-colors"
+            >
+              {lang === 'zh' ? '移除' : 'Remove'}
+            </button>
+            <button
+              onClick={() => onSelectSlot?.('')}
+              className="px-3 py-1 text-xs font-medium bg-ink-900/90 text-ink-200 rounded-full border border-ink-600 hover:border-ink-400 transition-colors"
+            >
+              {lang === 'zh' ? '取消选择' : 'Deselect'}
+            </button>
+          </div>
         );
       })()}
     </div>
@@ -199,7 +235,7 @@ function PlayerToken({
   player,
   showRatings,
   compact,
-  positionFit: fit,
+  positionPenalty: penalty,
   positionLabel,
   lang,
 }: {
@@ -207,6 +243,7 @@ function PlayerToken({
   showRatings: boolean;
   compact: boolean;
   positionFit: 'primary' | 'secondary' | 'other' | null;
+  positionPenalty: number;
   positionLabel: string;
   lang: string;
 }) {
@@ -215,11 +252,12 @@ function PlayerToken({
       {showRatings && (
         <span className={compact ? 'text-xs' : 'text-base sm:text-lg'}>
           {player.rating}
-          {fit === 'secondary' && (
-            <span className="text-yellow-300 text-[10px] ml-0.5">-5</span>
-          )}
-          {fit === 'other' && (
-            <span className="text-orange-300 text-[10px] ml-0.5">-15</span>
+          {penalty > 0 && (
+            <span className={`text-[10px] ml-0.5 ${
+              penalty <= 3 ? 'text-green-300' : penalty <= 5 ? 'text-yellow-300' : penalty <= 8 ? 'text-orange-300' : 'text-red-300'
+            }`}>
+              -{penalty}
+            </span>
           )}
         </span>
       )}
