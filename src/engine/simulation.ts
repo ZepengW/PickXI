@@ -7,8 +7,9 @@ import type {
   Position,
   SimResult,
   SquadSlot,
+  TableEntry,
 } from '../types';
-import { CLUB_MAP, getCompetition, ALL_PLAYERS } from '../data';
+import { CLUB_MAP, getCompetition, clubsForSeason, allClubsForCompetition } from '../data';
 
 // ---- Position weighting & grouping -----------------------------------------
 
@@ -208,31 +209,66 @@ export function simulateSeason(
   competitionId: string,
   slots: SquadSlot[],
   opponentSeason?: string,
+  teamName?: string,
   rng: () => number = Math.random,
 ): SimResult {
   const comp = getCompetition(competitionId);
   const matchCount = comp?.matches ?? 38;
   const teamCount = comp?.teamCount ?? 20;
-  const { overall, attack, defence } = teamStrength(slots);
+  const { attack, defence } = teamStrength(slots);
 
-  // Build opponent pool from the competition's clubs.
-  let oppClubs: Club[] = Object.values(CLUB_MAP).filter(
-    (c) => c.competitionId === competitionId,
-  );
+  // Build opponent pool.
+  // Strategy:
+  // - Leagues (EPL, La Liga, Serie A, Bundesliga, CSL): use dynamic clubs
+  //   from player data for the specific season, then pad with static
+  //   clubs to reach teamCount. This preserves promotion/relegation feel
+  //   while ensuring enough opponents for a full season.
+  // - Cups (WC, UCL): use ALL statically-defined clubs (32 nations / elite
+  //   clubs). Cups don't need player-data filtering because opponents don't
+  //   need to be user-draftable — they just need a strength rating.
+  const isCupComp = comp?.type === 'cup';
+  let oppClubs: Club[];
 
-  // If opponentSeason is specified, filter to clubs that have players in that season.
-  if (opponentSeason) {
-    const clubIdsWithPlayers = new Set(
-      ALL_PLAYERS
-        .filter((p) => p.competitionId === competitionId && p.season === opponentSeason)
-        .map((p) => p.clubId),
+  if (isCupComp) {
+    // Cups: 32 static teams
+    oppClubs = Object.values(CLUB_MAP).filter(
+      (c) => c.competitionId === competitionId,
     );
-    const filtered = oppClubs.filter((c) => clubIdsWithPlayers.has(c.id));
-    if (filtered.length > 0) oppClubs = filtered;
+  } else {
+    // Leagues: start with dynamic (player-data) clubs for the chosen season
+    // then pad with static clubs if we need more opponents.
+    const staticClubs = Object.values(CLUB_MAP).filter(
+      (c) => c.competitionId === competitionId,
+    );
+
+    if (opponentSeason) {
+      const dynamicClubs = clubsForSeason(competitionId, opponentSeason);
+      const dynamicIds = new Set(dynamicClubs.map((c) => c.id));
+      // Start with dynamic clubs (the ones with player data in this
+      // season), then add static clubs not already covered.
+      oppClubs = [...dynamicClubs];
+      for (const s of staticClubs) {
+        if (!dynamicIds.has(s.id)) oppClubs.push(s);
+      }
+    } else {
+      // No season: use all clubs ever seen (dynamic + static).
+      const dynamicClubs = allClubsForCompetition(competitionId);
+      const dynamicIds = new Set(dynamicClubs.map((c) => c.id));
+      oppClubs = [...dynamicClubs];
+      for (const s of staticClubs) {
+        if (!dynamicIds.has(s.id)) oppClubs.push(s);
+      }
+    }
   }
 
-  const opponentPool =
-    oppClubs.length > 0 ? oppClubs : Object.values(CLUB_MAP).slice(0, 10);
+  // Safety fallback: should never trigger, but guarantees >= 4 opponents.
+  if (oppClubs.length < 4) {
+    oppClubs = Object.values(CLUB_MAP).filter(
+      (c) => c.competitionId === competitionId,
+    );
+  }
+
+  const opponentPool = oppClubs;
 
   const matches: MatchResult[] = [];
   let points = 0;
@@ -304,6 +340,93 @@ export function simulateSeason(
   // Final position.
   const matchesPlayed = matches.length;
   let position: number;
+
+  // Generate full league table.
+  const table: TableEntry[] = [];
+
+  // Add user's XI to the table.
+  table.push({
+    position: 0, // will be set after sorting
+    clubId: 'user-xi',
+    clubName: teamName || 'Your XI',
+    clubNameZh: teamName || '你的十一人',
+    played: matchesPlayed,
+    won: wins,
+    drawn: draws,
+    lost: losses,
+    goalsFor,
+    goalsAgainst,
+    goalDifference: goalsFor - goalsAgainst,
+    points,
+    isUser: true,
+  });
+
+  // Generate simulated records for all opponent clubs.
+  for (const opp of opponentPool) {
+    // Simulate this club's season against other opponents.
+    const oppMatches = matchCount;
+    let oppWins = 0;
+    let oppDraws = 0;
+    let oppLosses = 0;
+    let oppGF = 0;
+    let oppGA = 0;
+
+    // Base strength determines expected performance.
+    const strengthFactor = (opp.strength - 70) / 20; // -0.5 to 1.0 roughly
+    const baseXG = 1.4 + strengthFactor * 0.3;
+    const baseXGA = 1.3 - strengthFactor * 0.2;
+
+    for (let i = 0; i < oppMatches; i++) {
+      // Simulate a match against a random opponent (not including user XI for simplicity).
+      const xgFor = clamp(baseXG + gaussian() * 0.6, 0.2, 4.5);
+      const xgAgainst = clamp(baseXGA + gaussian() * 0.6, 0.2, 4.5);
+      const gf = poisson(xgFor);
+      const ga = poisson(xgAgainst);
+      oppGF += gf;
+      oppGA += ga;
+      if (gf > ga) oppWins += 1;
+      else if (gf === ga) oppDraws += 1;
+      else oppLosses += 1;
+    }
+
+    const oppPoints = oppWins * 3 + oppDraws;
+    table.push({
+      position: 0,
+      clubId: opp.id,
+      clubName: opp.shortName,
+      clubNameZh: opp.shortNameZh,
+      played: oppMatches,
+      won: oppWins,
+      drawn: oppDraws,
+      lost: oppLosses,
+      goalsFor: oppGF,
+      goalsAgainst: oppGA,
+      goalDifference: oppGF - oppGA,
+      points: oppPoints,
+      isUser: false,
+    });
+  }
+
+  // Sort by points (desc), then goal difference (desc), then goals for (desc).
+  table.sort((a, b) => {
+    if (b.points !== a.points) return b.points - a.points;
+    if (b.goalDifference !== a.goalDifference) return b.goalDifference - a.goalDifference;
+    return b.goalsFor - a.goalsFor;
+  });
+
+  // Assign positions.
+  for (let i = 0; i < table.length; i++) {
+    table[i].position = i + 1;
+  }
+
+  // Find user's position.
+  const userEntry = table.find((e) => e.isUser);
+  position = userEntry?.position ?? 1;
+
+  // Cap table to actual number of participating teams (dynamic) or teamCount, whichever is larger.
+  const actualTeamCount = Math.max(teamCount, opponentPool.length + 1);
+  const finalTable = table.slice(0, actualTeamCount);
+
   if (isCup) {
     if (losses === 0) {
       position = 1;
@@ -311,8 +434,6 @@ export function simulateSeason(
       const bracket = Math.pow(2, matchCount - matchesPlayed + 1);
       position = clamp(Math.round(bracket), 2, teamCount);
     }
-  } else {
-    position = estimateLeaguePosition(points, overall, teamCount);
   }
 
   // Extended stats
@@ -377,9 +498,10 @@ export function simulateSeason(
     goalsFor,
     goalsAgainst,
     position,
-    teams: teamCount,
+    teams: finalTable.length,
     unbeaten: losses === 0,
     perfect: losses === 0 && draws === 0,
+    table: finalTable,
     cleanSheets,
     failedToScore,
     biggestWin,
@@ -419,19 +541,7 @@ function computeGrade(
   return 'F';
 }
 
-/**
- * Estimate where a team with the given points & strength would finish in a league.
- */
-function estimateLeaguePosition(userPoints: number, userStrength: number, teams: number): number {
-  const totals: number[] = [];
-  for (let i = 0; i < teams - 1; i++) {
-    const base = 40 + (Math.random() - 0.5) * 50 + (userStrength - 75) * 0.4;
-    totals.push(clamp(base + gaussian() * 12, 5, 105));
-  }
-  totals.push(userPoints);
-  totals.sort((a, b) => b - a);
-  return totals.indexOf(userPoints) + 1;
-}
+// Estimate function removed - using actual table generation instead
 
 /** Human-readable outcome letter for a match. */
 export function outcomeOf(m: MatchResult): MatchOutcome {

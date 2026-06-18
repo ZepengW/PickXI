@@ -36,6 +36,7 @@ export default function Game() {
               result={game.result}
               competitionId={game.competitionId}
               slots={game.slots}
+              formationId={game.formationId}
               onPlayAgain={() => game.startDraft()}
               onChangeSetup={() => game.backToSetup()}
               onRestartAll={() => game.restartAll()}
@@ -61,7 +62,7 @@ const DIFFICULTIES: { id: Difficulty; labelKey: StringKey; ruleKey: StringKey }[
 function SetupView() {
   const { lang, t } = useLang();
   const game = useGame();
-  const { competitionId, formationId, seasonFrom, seasonTo, difficulty, opponentSeason } = game;
+  const { competitionId, formationId, seasonFrom, seasonTo, difficulty, opponentSeason, teamName } = game;
   const seasons = availableSeasons(competitionId);
 
   const safeFrom = seasons.includes(seasonFrom) ? seasonFrom : seasons[0] ?? '';
@@ -177,6 +178,18 @@ function SetupView() {
             ))}
           </select>
         </div>
+      </Section>
+
+      {/* Team Name */}
+      <Section label={t('teamName')} hint={t('teamNameHint')}>
+        <input
+          type="text"
+          value={teamName}
+          onChange={(e) => game.setTeamName(e.target.value)}
+          placeholder={t('teamNamePlaceholder')}
+          maxLength={24}
+          className="bg-ink-900 border border-ink-700 rounded-lg px-4 py-2.5 text-sm text-ink-100 font-mono w-full max-w-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:border-accent placeholder:text-ink-600"
+        />
       </Section>
 
       {/* Difficulty */}
@@ -406,6 +419,7 @@ function DraftView() {
             <Bench
               bench={bench}
               showRatings={diffCfg.showRatings}
+              showPosition={diffCfg.showPosition}
               onPlace={(player, slotId) => game.placeBenchPlayer(player, slotId)}
               slots={slots}
               lang={lang}
@@ -509,6 +523,7 @@ function DraftView() {
                   draftedIds={draftedSet}
                   showRatings={diffCfg.showRatings}
                   hideTier={!diffCfg.showTier}
+                  showPosition={diffCfg.showPosition}
                   showNationality={diffCfg.showNationality}
                   clubId={spin.clubId}
                   season={spin.season}
@@ -574,6 +589,7 @@ function StrengthBars({
 function Bench({
   bench,
   showRatings,
+  showPosition,
   onPlace,
   slots,
   lang,
@@ -581,6 +597,7 @@ function Bench({
 }: {
   bench: Player[];
   showRatings: boolean;
+  showPosition: boolean;
   onPlace: (player: Player, slotId: string) => void;
   slots: SquadSlot[];
   lang: string;
@@ -610,7 +627,7 @@ function Bench({
           >
             {showRatings && <span className="font-mono font-bold mr-1">{p.rating}</span>}
             {lang === 'zh' ? p.nameZh : p.name}
-            <span className="text-ink-500 ml-1">{p.position}</span>
+            {showPosition && <span className="text-ink-500 ml-1">{p.position}</span>}
           </button>
         ))}
       </div>

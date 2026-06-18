@@ -1,4 +1,4 @@
-// DreamXI core types
+// Pick XI core types
 
 /** On-pitch position codes. */
 export type Position =
@@ -113,6 +113,24 @@ export interface MatchResult {
 
 export type MatchOutcome = 'W' | 'D' | 'L';
 
+/** A single team's row in the final league table. */
+export interface TableEntry {
+  position: number;
+  clubId: string;
+  clubName: string;
+  clubNameZh: string;
+  played: number;
+  won: number;
+  drawn: number;
+  lost: number;
+  goalsFor: number;
+  goalsAgainst: number;
+  goalDifference: number;
+  points: number;
+  /** Whether this entry is the user's XI. */
+  isUser: boolean;
+}
+
 export interface SimResult {
   matches: MatchResult[];
   points: number;
@@ -127,6 +145,8 @@ export interface SimResult {
   teams: number;
   unbeaten: boolean;
   perfect: boolean;
+  /** Full league table (all teams, sorted by points). */
+  table: TableEntry[];
   // Extended stats
   cleanSheets: number;
   failedToScore: number;

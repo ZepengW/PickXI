@@ -35,6 +35,7 @@ interface PlayerCardProps {
   disabled?: boolean;
   showRatings?: boolean;
   hideTier?: boolean;
+  showPosition?: boolean;
   showNationality?: boolean;
   compact?: boolean;
 }
@@ -46,6 +47,7 @@ export default function PlayerCard({
   disabled,
   showRatings = true,
   hideTier = false,
+  showPosition = true,
   showNationality = true,
   compact = false,
 }: PlayerCardProps) {
@@ -76,9 +78,15 @@ export default function PlayerCard({
         ) : (
           <span className="font-mono font-black text-xl text-ink-100/70">??</span>
         )}
-        <span className="font-mono text-xs font-bold text-white/80 bg-black/30 px-2 py-1 rounded">
-          {POS_SHORT[player.position][lang]}
-        </span>
+        {showPosition ? (
+          <span className="font-mono text-xs font-bold text-white/80 bg-black/30 px-2 py-1 rounded">
+            {POS_SHORT[player.position][lang]}
+          </span>
+        ) : (
+          <span className="font-mono text-xs font-bold text-white/40 bg-black/20 px-2 py-1 rounded">
+            ???
+          </span>
+        )}
       </div>
 
       {/* Body */}

@@ -15,7 +15,7 @@ export default function Nav() {
       <div className="mx-auto max-w-7xl px-4 sm:px-8 h-14 sm:h-16 flex items-center justify-between">
         <Link to="/" className="flex items-center gap-2.5 group">
           <span className="font-display font-black text-xl sm:text-2xl tracking-tightest text-ink-100">
-            Dream<span className="text-accent">XI</span>
+            Pick<span className="text-accent">XI</span>
           </span>
           <span className="hidden md:inline text-sm text-ink-400 font-medium tracking-wide uppercase">
             {t('brandTagline')}

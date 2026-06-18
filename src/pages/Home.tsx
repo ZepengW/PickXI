@@ -347,7 +347,7 @@ export default function Home() {
             {t('footerNote')}
           </p>
           <p className="text-xs text-ink-500">{t('inspiredBy')}</p>
-          <p className="text-xs text-ink-500">© 2026 DreamXI</p>
+          <p className="text-xs text-ink-500">© 2026 Pick XI</p>
         </div>
       </footer>
     </div>

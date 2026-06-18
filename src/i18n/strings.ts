@@ -2,14 +2,14 @@ import type { Lang } from '../types';
 
 export const STRINGS = {
   // Brand & nav
-  brandTagline: { zh: '梦幻十一人', en: 'Your dream XI' },
+  brandTagline: { zh: '梦幻十一人', en: 'Pick your XI' },
   navPlay: { zh: '开始游戏', en: 'Play' },
   navHome: { zh: '首页', en: 'Home' },
   navLeaderboard: { zh: '战绩', en: 'Results' },
 
   // Hero
   heroEyebrow: { zh: '从足球历史中选秀组队', en: 'Draft from football history' },
-  heroTitle: { zh: '组建你的梦幻十一人', en: 'Build your dream XI' },
+  heroTitle: { zh: '组建你的梦幻十一人', en: 'Pick your XI' },
   heroSub: {
     zh: '转动转盘，落在真实的俱乐部与赛季；从那支阵容中选秀，凑齐十一人，模拟整赛季。你能赢下多少场？',
     en: 'Spin the wheel to land on a real club and season. Draft a player, fill your XI, then simulate a full campaign. How many can you win?',
@@ -96,6 +96,12 @@ export const STRINGS = {
     en: 'Pick a season; all clubs from that season will be your opponents.',
   },
   opponentSeasonAny: { zh: '不限制', en: 'Any' },
+  teamName: { zh: '队伍名称', en: 'Team name' },
+  teamNameHint: {
+    zh: '给你的队伍取个名字吧！留空则使用默认名称。',
+    en: 'Name your squad! Leave empty for the default name.',
+  },
+  teamNamePlaceholder: { zh: '我的梦幻十一人', en: 'My Dream XI' },
 
   // Draft
   spin: { zh: '转动转盘', en: 'Spin' },
@@ -155,8 +161,8 @@ export const STRINGS = {
   defence: { zh: '防守', en: 'Defence' },
   overall: { zh: '总评', en: 'Overall' },
   footerNote: {
-    zh: 'DreamXI 是独立粉丝作品，与任何俱乐部、联赛、赛事或数据提供商无关。球员评分基于公开数据的独立解读，仅供参考。',
-    en: 'DreamXI is an independent fan-made game, not affiliated with any club, league, competition, or ratings provider. Ratings are an independent interpretation for descriptive purposes only.',
+    zh: 'Pick XI 是独立粉丝作品，与任何俱乐部、联赛、赛事或数据提供商无关。球员评分基于公开数据的独立解读，仅供参考。',
+    en: 'Pick XI is an independent fan-made game, not affiliated with any club, league, competition, or ratings provider. Ratings are an independent interpretation for descriptive purposes only.',
   },
   inspiredBy: {
     zh: '灵感来自 82-0.com 与 38-0.app，致以谢意。',

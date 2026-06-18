@@ -23,6 +23,8 @@ interface GameState {
   difficulty: Difficulty;
   /** Opponent season — if set, sim uses all clubs from this season as opponents. */
   opponentSeason: string;
+  /** User's team name. */
+  teamName: string;
 
   // run state (not persisted)
   phase: Phase;
@@ -43,6 +45,7 @@ interface GameState {
   setSeasonRange: (from: string, to: string) => void;
   setDifficulty: (d: Difficulty) => void;
   setOpponentSeason: (s: string) => void;
+  setTeamName: (name: string) => void;
 
   startDraft: () => void;
   doSpin: (clubId: string, season: string) => void;
@@ -140,6 +143,7 @@ export const useGame = create<GameState>()(
       seasonTo: '2024-25',
       difficulty: 'easy',
       opponentSeason: '',
+      teamName: '',
 
       phase: 'setup',
       slots: emptySlots('433'),
@@ -192,6 +196,7 @@ export const useGame = create<GameState>()(
       setSeasonRange: (from, to) => set({ seasonFrom: from, seasonTo: to }),
       setDifficulty: (d) => set({ difficulty: d }),
       setOpponentSeason: (s) => set({ opponentSeason: s }),
+      setTeamName: (name) => set({ teamName: name }),
 
       startDraft: () =>
         set({
@@ -290,7 +295,7 @@ export const useGame = create<GameState>()(
 
       runSim: () => {
         const { competitionId, slots, opponentSeason } = get();
-        const result = simulateSeason(competitionId, slots, opponentSeason || undefined);
+        const result = simulateSeason(competitionId, slots, opponentSeason || undefined, get().teamName || undefined);
         set({ phase: 'results', result });
       },
 
@@ -307,7 +312,7 @@ export const useGame = create<GameState>()(
         }),
 
       restartAll: () => {
-        localStorage.removeItem('dreamxi-store');
+        localStorage.removeItem('pick-xi-store');
         set({
           lang: 'zh',
           theme: 'dark',
@@ -331,7 +336,7 @@ export const useGame = create<GameState>()(
       backToSetup: () => set({ phase: 'setup', result: null }),
     }),
     {
-      name: 'dreamxi-store',
+      name: 'pick-xi-store',
       partialize: (s) => ({
         lang: s.lang,
         theme: s.theme,
@@ -341,6 +346,7 @@ export const useGame = create<GameState>()(
         seasonTo: s.seasonTo,
         difficulty: s.difficulty,
         opponentSeason: s.opponentSeason,
+        teamName: s.teamName,
       }),
       onRehydrateStorage: () => (state) => {
         if (state) {

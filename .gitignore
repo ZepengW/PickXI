@@ -22,3 +22,23 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# FM data processing scripts & temp files
+analyze_fm.js
+convert_fm.js
+process_fm.js
+fm_convert_v2.js
+fm_convert.js
+inspect_csv.js
+inspect_csv2.js
+nat_map.json
+merge_fm.cjs
+test.js
+fm_final/
+fm_final2/
+fm_final2_bak/
+fm_converted/
+_analyze_data.*
+_seasons.*
+_wc_check.*
+download_datasets/
