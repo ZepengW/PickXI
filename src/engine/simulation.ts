@@ -59,40 +59,40 @@ export function positionGroup(pos: Position): PositionGroup {
 // ---- Position fit -----------------------------------------------------------
 
 /**
- * Position compatibility matrix inspired by FIFA/FM.
+ * Position compatibility matrix — adapted for FM 1-20 scale.
  *
- * For each (fromPos, toPos) pair, defines a penalty:
+ * Penalties are proportional to the 1-20 attribute range:
  *   0  = natural / primary — no penalty
- *   3  = very comfortable — e.g. CM→CDM, ST→CF
- *   5  = comfortable — e.g. CAM→CM, CB→CDM
- *   8  = can play but uncomfortable — e.g. LW→ST, CM→CAM
- *   12 = significantly out of position — e.g. ST→CM, CB→LB
- *   18 = completely out of position — e.g. GK→ST, ST→CB
+ *   1  = very comfortable — e.g. CM→CDM, ST→CF
+ *   2  = comfortable — e.g. CAM→CM, CB→CDM
+ *   3  = can play but uncomfortable — e.g. LW→ST, CM→CAM
+ *   4  = significantly out of position — e.g. ST→CM, CB→LB
+ *   5  = completely out of position — e.g. GK→ST, ST→CB
  *
- * Only non-trivial entries are listed; missing pairs default to 18.
+ * Only non-trivial entries are listed; missing pairs default to 5.
  * A player's `positions` array still overrides: if the slot position is
- * in the player's `positions` list, the penalty is capped at 5.
+ * in the player's `positions` list, the penalty is capped at 2.
  */
 const POS_COMPAT: Partial<Record<Position, Partial<Record<Position, number>>>> = {
   // --- GK ---
   GK: { GK: 0 },
   // --- Defenders ---
-  CB: { CB: 0, CDM: 5, LB: 12, RB: 12, LWB: 12, RWB: 12 },
-  LB: { LB: 0, LWB: 3, CB: 8, LM: 12, LW: 12 },
-  RB: { RB: 0, RWB: 3, CB: 8, RM: 12, RW: 12 },
-  LWB: { LWB: 0, LB: 3, LM: 8, LW: 12, CB: 12 },
-  RWB: { RWB: 0, RB: 3, RM: 8, RW: 12, CB: 12 },
+  CB: { CB: 0, CDM: 2, LB: 4, RB: 4, LWB: 4, RWB: 4 },
+  LB: { LB: 0, LWB: 1, CB: 3, LM: 4, LW: 4 },
+  RB: { RB: 0, RWB: 1, CB: 3, RM: 4, RW: 4 },
+  LWB: { LWB: 0, LB: 1, LM: 3, LW: 4, CB: 4 },
+  RWB: { RWB: 0, RB: 1, RM: 3, RW: 4, CB: 4 },
   // --- Midfielders ---
-  CDM: { CDM: 0, CM: 3, CB: 8, CAM: 8 },
-  CM: { CM: 0, CDM: 3, CAM: 5, LM: 8, RM: 8 },
-  CAM: { CAM: 0, CM: 5, CF: 5, CDM: 12, LW: 8, RW: 8, ST: 12 },
-  LM: { LM: 0, LW: 3, RM: 8, CM: 8, LB: 12, LWB: 12 },
-  RM: { RM: 0, RW: 3, LM: 8, CM: 8, RB: 12, RWB: 12 },
+  CDM: { CDM: 0, CM: 1, CB: 3, CAM: 3 },
+  CM: { CM: 0, CDM: 1, CAM: 2, LM: 3, RM: 3 },
+  CAM: { CAM: 0, CM: 2, CF: 2, CDM: 4, LW: 3, RW: 3, ST: 4 },
+  LM: { LM: 0, LW: 1, RM: 3, CM: 3, LB: 4, LWB: 4 },
+  RM: { RM: 0, RW: 1, LM: 3, CM: 3, RB: 4, RWB: 4 },
   // --- Attackers ---
-  LW: { LW: 0, LM: 3, RW: 5, CF: 8, ST: 8, CAM: 8 },
-  RW: { RW: 0, RM: 3, LW: 5, CF: 8, ST: 8, CAM: 8 },
-  CF: { CF: 0, ST: 3, CAM: 5, LW: 12, RW: 12 },
-  ST: { ST: 0, CF: 3, LW: 8, RW: 8, CAM: 12 },
+  LW: { LW: 0, LM: 1, RW: 2, CF: 3, ST: 3, CAM: 3 },
+  RW: { RW: 0, RM: 1, LW: 2, CF: 3, ST: 3, CAM: 3 },
+  CF: { CF: 0, ST: 1, CAM: 2, LW: 4, RW: 4 },
+  ST: { ST: 0, CF: 1, LW: 3, RW: 3, CAM: 4 },
 };
 
 /**
@@ -121,12 +121,12 @@ export function positionPenalty(
   if (player.position === slotPosition) return 0;
 
   // If the slot position is in the player's positions list (secondary),
-  // use a mild penalty (0-5 range from compat matrix, capped at 5).
+  // use a mild penalty (0-2 range from compat matrix, capped at 2).
   const isSecondary = player.positions.includes(slotPosition);
-  const compatPenalty = POS_COMPAT[player.position]?.[slotPosition] ?? 18;
+  const compatPenalty = POS_COMPAT[player.position]?.[slotPosition] ?? 5;
 
   if (isSecondary) {
-    return Math.min(compatPenalty, 5);
+    return Math.min(compatPenalty, 2);
   }
   return compatPenalty;
 }
@@ -183,9 +183,9 @@ function getAdjacent(slotId: string, allSlotIds: string[]): string[] {
   return [];
 }
 
-/** Chemistry bonus values. */
-const CHEM_CLUB_BONUS = 3;   // same club
-const CHEM_NATION_BONUS = 1; // same nationality
+/** Chemistry bonus values — scaled for FM 1-20 range. */
+const CHEM_CLUB_BONUS = 1;   // same club
+const CHEM_NATION_BONUS = 0.5; // same nationality
 
 /**
  * Calculate chemistry for a squad.
@@ -235,8 +235,8 @@ export function calculateChemistry(slots: SquadSlot[]): ChemistryResult {
   }
 
   const totalBonus = links.reduce((sum, l) => sum + l.bonus, 0);
-  // Max possible: ~20 links * 3 = 60. Scale to 0-100.
-  const maxPossible = 60;
+  // Max possible: ~20 links * 1 = 20. Scale to 0-100.
+  const maxPossible = 20;
   const rating = Math.round(Math.min(100, (totalBonus / maxPossible) * 100));
 
   return { links, totalBonus, rating };
@@ -257,7 +257,7 @@ export function teamStrength(slots: SquadSlot[]): {
 } {
   const filled = slots.filter((s) => s.player !== null);
   if (filled.length === 0) {
-    return { overall: 50, attack: 50, midfield: 50, defence: 50 };
+    return { overall: 10, attack: 10, midfield: 10, defence: 10 };
   }
 
   // Calculate chemistry bonus per player
@@ -284,7 +284,7 @@ export function teamStrength(slots: SquadSlot[]): {
     const w = POSITION_WEIGHT[slot.position] ?? 1;
     const penalty = positionPenalty(pl, slot.position);
     const chemBonus = chemBonusPerSlot[slot.slotId] ?? 0;
-    const effectiveRating = Math.max(30, pl.rating - penalty + chemBonus);
+    const effectiveRating = Math.max(5, pl.rating - penalty + chemBonus);
     const attrAvg = avgAttr(pl.attr);
     const score = effectiveRating * 0.6 + attrAvg * 0.4;
     totalWeight += w;
@@ -305,13 +305,13 @@ export function teamStrength(slots: SquadSlot[]): {
 
   const overall = totalScore / totalWeight;
   const missing = 11 - filled.length;
-  const penalty = missing * 2.2;
+  const penalty = missing * 0.5;
 
   return {
-    overall: clamp(overall - penalty, 30, 99),
-    attack: attW ? clamp(attSum / attW, 30, 99) : overall,
-    midfield: midW ? clamp(midSum / midW, 30, 99) : overall,
-    defence: defW ? clamp(defSum / defW, 30, 99) : overall,
+    overall: clamp(overall - penalty, 5, 20),
+    attack: attW ? clamp(attSum / attW, 5, 20) : overall,
+    midfield: midW ? clamp(midSum / midW, 5, 20) : overall,
+    defence: defW ? clamp(defSum / defW, 5, 20) : overall,
   };
 }
 
@@ -344,12 +344,12 @@ export function simulateMatch(
   oppStrength: number,
   home: boolean,
 ): { goalsFor: number; goalsAgainst: number } {
-  const homeBoost = home ? 4 : 0;
+  const homeBoost = home ? 1 : 0;
   const attackDelta = myAttack - oppStrength + homeBoost;
   const defenceDelta = myDefence - oppStrength;
 
-  const xgFor = clamp(1.35 + attackDelta * 0.08 + gaussian() * 0.28, 0.15, 5.5);
-  const xgAgainst = clamp(1.25 - defenceDelta * 0.075 + gaussian() * 0.28, 0.1, 5.5);
+  const xgFor = clamp(1.35 + attackDelta * 0.35 + gaussian() * 0.28, 0.15, 5.5);
+  const xgAgainst = clamp(1.25 - defenceDelta * 0.3 + gaussian() * 0.28, 0.1, 5.5);
 
   return {
     goalsFor: poisson(xgFor),
@@ -485,7 +485,7 @@ export function simulateSeason(
     let oppStrength = opp.strength;
     if (isCup) {
       const progress = i / Math.max(1, matchCount - 1);
-      oppStrength = clamp(opp.strength * (0.82 + progress * 0.3), 60, 95);
+      oppStrength = clamp(opp.strength * (0.82 + progress * 0.3), 8, 20);
     }
 
     const { goalsFor: gf, goalsAgainst: ga } = simulateMatch(
@@ -562,12 +562,12 @@ export function simulateSeason(
       // Simulate two matches (home & away) between these two clubs.
       for (let leg = 0; leg < 2; leg++) {
         const isHome = leg === 0;
-        const homeBoost = isHome ? 4 : 0;
+        const homeBoost = isHome ? 1 : 0;
         const strengthDelta = opp.strength - other.strength + homeBoost;
 
         // Expected goals based on strength difference
-        const xgFor = clamp(1.35 + strengthDelta * 0.045 + gaussian() * 0.45, 0.2, 4.5);
-        const xgAgainst = clamp(1.25 - strengthDelta * 0.04 + gaussian() * 0.45, 0.2, 4.5);
+        const xgFor = clamp(1.35 + strengthDelta * 0.2 + gaussian() * 0.45, 0.2, 4.5);
+        const xgAgainst = clamp(1.25 - strengthDelta * 0.17 + gaussian() * 0.45, 0.2, 4.5);
 
         const gf = poisson(xgFor);
         const ga = poisson(xgAgainst);

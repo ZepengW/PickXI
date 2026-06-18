@@ -21,10 +21,11 @@ const POS_SHORT: Record<Position, { zh: string; en: string }> = {
 };
 
 function ratingTier(r: number): { bg: string; text: string } {
-  if (r >= 90) return { bg: 'from-amber-500 to-yellow-600', text: 'text-amber-100' };
-  if (r >= 85) return { bg: 'from-purple-600 to-fuchsia-700', text: 'text-fuchsia-100' };
-  if (r >= 80) return { bg: 'from-sky-600 to-blue-700', text: 'text-sky-100' };
-  if (r >= 75) return { bg: 'from-emerald-600 to-green-700', text: 'text-emerald-100' };
+  // FM 1-20 scale tiers
+  if (r >= 16) return { bg: 'from-amber-500 to-yellow-600', text: 'text-amber-100' };
+  if (r >= 14) return { bg: 'from-purple-600 to-fuchsia-700', text: 'text-fuchsia-100' };
+  if (r >= 12) return { bg: 'from-sky-600 to-blue-700', text: 'text-sky-100' };
+  if (r >= 10) return { bg: 'from-emerald-600 to-green-700', text: 'text-emerald-100' };
   return { bg: 'from-ink-600 to-ink-700', text: 'text-ink-100' };
 }
 

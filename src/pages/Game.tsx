@@ -701,7 +701,7 @@ function StrengthBars({
           <div className="mt-1.5 h-2 rounded-full bg-ink-800 overflow-hidden">
             <div
               className={`h-full ${b.color} rounded-full transition-all duration-500`}
-              style={{ width: `${b.value}%` }}
+              style={{ width: `${Math.max(5, ((b.value - 5) / 15) * 100)}%` }}
             />
           </div>
         </div>

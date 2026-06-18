@@ -298,7 +298,7 @@ function PlayerToken({
           {player.rating}
           {penalty > 0 && (
             <span className={`text-[10px] ml-0.5 ${
-              penalty <= 3 ? 'text-green-300' : penalty <= 5 ? 'text-yellow-300' : penalty <= 8 ? 'text-orange-300' : 'text-red-300'
+              penalty <= 1 ? 'text-green-300' : penalty <= 2 ? 'text-yellow-300' : penalty <= 3 ? 'text-orange-300' : 'text-red-300'
             }`}>
               -{penalty}
             </span>

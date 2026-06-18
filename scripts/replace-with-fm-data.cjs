@@ -224,7 +224,7 @@ function generateLeagueFile(competitionId, players) {
 import { p } from './_helpers';
 
 // FM data — ${competitionId.toUpperCase()} players from 2019-20 to 2022-23.
-// Ratings use curved FM-converted scale (FM 1→15, FM 10→58, FM 15→80, FM 20→99).
+// Ratings use FM native 1-20 scale (no conversion to 1-99).
 export const ${league.exportName}: Player[] = [`;
 
   // Group players by club+season
@@ -341,7 +341,7 @@ function calculateClubStrengths(competitionId, allPlayers) {
     const sorted = [...players].sort((a, b) => b.rating - a.rating);
     const top11 = sorted.slice(0, 11);
     const avgRating = top11.reduce((sum, p) => sum + p.rating, 0) / top11.length;
-    // Scale: FM avg ~55-65 → strength should be in similar range
+    // FM 1-20 scale: average rating of top 11 players (roughly 8-16 range)
     // Round to nearest integer
     strengths[clubId] = Math.round(avgRating);
   }
@@ -381,14 +381,13 @@ function updateCompetitionsTs(leagueSeasons, clubStrengths) {
   for (const [clubId, strength] of Object.entries(clubStrengths)) {
     // Find the club entry and update its strength
     // Pattern: { id: 'clubId', ... strength: old }
+    // Use global flag to replace ALL occurrences (some clubs appear in multiple competitions)
     const clubRegex = new RegExp(
-      `(\\{\\s*id:\\s*'${clubId.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}'[\\s\\S]*?strength:\\s*)\\d+`
+      `(\\{\\s*id:\\s*'${clubId.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}'[\\s\\S]*?strength:\\s*)\\d+`,
+      'g'
     );
 
-    const match = content.match(clubRegex);
-    if (match) {
-      content = content.replace(clubRegex, `$1${strength}`);
-    }
+    content = content.replace(clubRegex, `$1${strength}`);
   }
   console.log('  Updated club strengths');
 

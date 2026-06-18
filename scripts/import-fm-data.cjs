@@ -2,7 +2,7 @@
  * FM Data Import Script
  *
  * Reads FM CSV data (fm2023.csv, fm22data.csv, fm21data.csv, fm20data.csv),
- * maps FM attributes (1-20) to FIFA-style 1-99 scale, maps positions,
+ * Maps FM attributes using FM's native 1-20 scale directly (no conversion to 1-99).
  * divisions, and clubs, then outputs JSON files per league+season.
  *
  * CRITICAL: fm22data.csv has unquoted Position fields with commas
@@ -390,22 +390,6 @@ function matchClub(fmClubName, competitionId) {
   return null;
 }
 
-function fmToFifa(val) {
-  const v = Math.max(1, Math.min(20, val));
-  // Curved mapping: FM 1→15, FM 10→58, FM 15→80, FM 18→91, FM 20→99
-  return Math.round(15 + 85 * Math.pow((v - 1) / 19, 0.75));
-}
-
-function weightedAvg(attrs) {
-  let sum = 0, wSum = 0;
-  for (const a of attrs) {
-    const v = Math.max(1, Math.min(20, a.value || 1));
-    sum += v * a.weight;
-    wSum += a.weight;
-  }
-  return wSum > 0 ? sum / wSum : 1;
-}
-
 function cleanPosition(pos) {
   return pos.replace(/"/g, '').trim();
 }
@@ -645,76 +629,48 @@ function parseCSVFile(filePath, season) {
       continue;
     }
 
-    // Calculate attributes
+    // Calculate attributes using FM's native 1-20 scale directly
+    const isGK = posMapping.position === 'GK';
+
     const acc = attrMap['Acc'] || 10;
     const pac = attrMap['Pac'] || 10;
-    const PAC = fmToFifa((acc + pac) / 2);
+    const PAC = Math.round((acc + pac) / 2);
 
-    const fin = attrMap['Fin'] || 10;
-    const hea = attrMap['Hea'] || 10;
-    const com = attrMap['Com'] || 10;
-    const SHO = fmToFifa(weightedAvg([
-      { value: fin, weight: 0.5 },
-      { value: hea, weight: 0.2 },
-      { value: com, weight: 0.3 },
-    ]));
+    let SHO, PAS, DEF, PHY;
 
-    const pas = attrMap['Pas'] || 10;
-    const vis = attrMap['Vis'] || 10;
-    const cmp = attrMap['Cmp'] || 10;
-    const PAS = fmToFifa(weightedAvg([
-      { value: pas, weight: 0.4 },
-      { value: vis, weight: 0.3 },
-      { value: cmp, weight: 0.3 },
-    ]));
-
-    const dri = attrMap['Dri'] || 10;
-    const agi = attrMap['Agi'] || 10;
-    const bal = attrMap['Bal'] || 10;
-    const tec = attrMap['Tec'] || 10;
-    const DRI = fmToFifa(weightedAvg([
-      { value: dri, weight: 0.35 },
-      { value: agi, weight: 0.2 },
-      { value: bal, weight: 0.2 },
-      { value: tec, weight: 0.25 },
-    ]));
-
-    const tck = attrMap['Tck'] || 10;
-    const mar = attrMap['Mar'] || 10;
-    const ant = attrMap['Ant'] || 10;
-    const cnt = attrMap['Cnt'] || 10;
-    const DEF = fmToFifa(weightedAvg([
-      { value: tck, weight: 0.35 },
-      { value: mar, weight: 0.25 },
-      { value: ant, weight: 0.2 },
-      { value: cnt, weight: 0.2 },
-    ]));
-
-    const str = attrMap['Str'] || 10;
-    const sta = attrMap['Sta'] || 10;
-    const jum = attrMap['Jum'] || 10;
-    const PHY = fmToFifa(weightedAvg([
-      { value: str, weight: 0.4 },
-      { value: sta, weight: 0.35 },
-      { value: jum, weight: 0.25 },
-    ]));
-
-    // Calculate overall rating using position-weighted formula
-    // This ensures attackers have high ratings even with low DEF
-    let rating;
-    if (posMapping.position === 'GK') {
-      rating = Math.round(PAS * 0.2 + DEF * 0.5 + PHY * 0.3);
-    } else if (['ST', 'CF', 'LW', 'RW', 'LM', 'RM'].includes(posMapping.position)) {
-      // Attackers: weighted towards PAC, SHO, DRI
-      rating = Math.round(PAC * 0.2 + SHO * 0.3 + PAS * 0.1 + DRI * 0.25 + DEF * 0.05 + PHY * 0.1);
-    } else if (['CAM', 'CM', 'CDM'].includes(posMapping.position)) {
-      // Midfielders: weighted towards PAS, DRI, DEF
-      rating = Math.round(PAC * 0.1 + SHO * 0.1 + PAS * 0.3 + DRI * 0.2 + DEF * 0.2 + PHY * 0.1);
+    if (isGK) {
+      // GK: SHO=Ref (shot-stopping), PAS=Kic, DEF=Han, PHY=(Str+Sta)/2
+      const ref = attrMap['Ref'] || 10;
+      const kic = attrMap['Kic'] || 10;
+      const han = attrMap['Han'] || 10;
+      const str = attrMap['Str'] || 10;
+      const sta = attrMap['Sta'] || 10;
+      SHO = ref;
+      PAS = kic;
+      DEF = han;
+      PHY = Math.round((str + sta) / 2);
     } else {
-      // Defenders: weighted towards DEF, PHY
-      rating = Math.round(PAC * 0.1 + SHO * 0.05 + PAS * 0.15 + DRI * 0.1 + DEF * 0.35 + PHY * 0.25);
+      // Field players: direct FM attributes
+      const fin = attrMap['Fin'] || 10;
+      const pas = attrMap['Pas'] || 10;
+      const dri = attrMap['Dri'] || 10;
+      const tck = attrMap['Tck'] || 10;
+      const str = attrMap['Str'] || 10;
+      SHO = fin;
+      PAS = pas;
+      DRI = dri;
+      DEF = tck;
+      PHY = str;
     }
-    rating = Math.max(40, Math.min(99, rating));
+
+    // Calculate overall rating
+    let rating;
+    if (isGK) {
+      rating = Math.round(SHO * 0.4 + DEF * 0.35 + PAS * 0.15 + PHY * 0.1);
+    } else {
+      rating = Math.round((PAC + SHO + PAS + DRI + DEF + PHY) / 6);
+    }
+    rating = Math.max(1, Math.min(20, rating));
 
     const nationality = NAT_MAP[natCode] || natCode;
     const nationalityZh = NAT_ZH_MAP[nationality] || nationality;
@@ -770,16 +726,36 @@ async function main() {
   console.log('\n=== Output Files ===');
   for (const [key, players] of Object.entries(allPlayers)) {
     const [competitionId, season] = key.split('|');
+
+    // Deduplicate by name + clubId: keep the one with the highest overall rating
+    const dedupMap = new Map();
+    for (const player of players) {
+      const dedupKey = `${player.name}|${player.clubId}`;
+      const existing = dedupMap.get(dedupKey);
+      if (!existing || player.rating > existing.rating) {
+        dedupMap.set(dedupKey, player);
+      }
+    }
+    const deduped = [...dedupMap.values()];
+
     const fileName = `fm-${competitionId}-${season.replace(/-/g, '_')}.json`;
     const outputPath = path.join(OUTPUT_DIR, fileName);
 
-    players.sort((a, b) => {
+    deduped.sort((a, b) => {
       if (a.clubId !== b.clubId) return a.clubId.localeCompare(b.clubId);
       return b.rating - a.rating;
     });
 
-    fs.writeFileSync(outputPath, JSON.stringify(players, null, 2), 'utf-8');
-    console.log(`  ${fileName}: ${players.length} players`);
+    const dupesRemoved = players.length - deduped.length;
+    if (dupesRemoved > 0) {
+      console.log(`  ${fileName}: ${players.length} → ${deduped.length} players (${dupesRemoved} duplicates removed)`);
+    }
+
+    fs.writeFileSync(outputPath, JSON.stringify(deduped, null, 2), 'utf-8');
+    console.log(`  ${fileName}: ${deduped.length} players`);
+
+    // Replace the array with deduped version for downstream use
+    allPlayers[key] = deduped;
   }
 
   // Statistics
@@ -848,13 +824,12 @@ async function main() {
     console.log();
   }
 
-  console.log('=== Analysis: Is mixing FM and FIFA data problematic? ===');
-  console.log('1. FM 1-20 → 1-99 via (val*5-1) compresses the range (max 99, min 4)');
-  console.log('2. FM weighted averages for composite attrs differ from FIFA single-attr mappings');
-  console.log('3. Overall rating: FM averages 6 attrs; FIFA has its own OVR formula with position weights');
-  console.log('4. FM data produces systematically lower ratings (~20-30 pts lower for top players)');
-  console.log('5. RECOMMENDATION: Do NOT mix FM and FIFA data without normalization.');
-  console.log('   The rating scales and attribute distributions differ significantly.');
+  console.log('=== Analysis: FM 1-20 Scale ===');
+  console.log('1. All attributes now use FM native 1-20 scale directly');
+  console.log('2. Field player OVR = average of 6 attributes (PAC+SHO+PAS+DRI+DEF+PHY)/6');
+  console.log('3. GK OVR = Ref*0.4 + Han*0.35 + Kic*0.15 + PHY*0.1');
+  console.log('4. Ratings will be in 1-20 range (top players ~14-18)');
+  console.log('5. No conversion to FIFA 1-99 scale — data stays true to FM source');
 }
 
 function findPlayer(players, name) {

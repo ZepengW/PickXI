@@ -227,7 +227,7 @@ export default function ResultsView({
                       ] as const).map(([key, val]) => (
                         <div key={key} className="text-center w-7">
                           <div className="text-[8px] text-ink-500">{key}</div>
-                          <div className={`font-bold ${val >= 85 ? 'text-accent' : val >= 75 ? 'text-ink-100' : 'text-ink-400'}`}>{val}</div>
+                          <div className={`font-bold ${val >= 14 ? 'text-accent' : val >= 12 ? 'text-ink-100' : 'text-ink-400'}`}>{val}</div>
                         </div>
                       ))}
                     </div>
