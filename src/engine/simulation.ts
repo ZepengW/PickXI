@@ -348,8 +348,8 @@ export function simulateMatch(
   const attackDelta = myAttack - oppStrength + homeBoost;
   const defenceDelta = myDefence - oppStrength;
 
-  const xgFor = clamp(1.35 + attackDelta * 0.045 + gaussian() * 0.55, 0.15, 5.5);
-  const xgAgainst = clamp(1.25 - defenceDelta * 0.04 + gaussian() * 0.55, 0.1, 5.5);
+  const xgFor = clamp(1.35 + attackDelta * 0.08 + gaussian() * 0.28, 0.15, 5.5);
+  const xgAgainst = clamp(1.25 - defenceDelta * 0.075 + gaussian() * 0.28, 0.1, 5.5);
 
   return {
     goalsFor: poisson(xgFor),
