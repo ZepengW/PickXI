@@ -50,6 +50,9 @@ export const COMPETITIONS: Competition[] = [
     accent: '#d01013',
     blurb: 'The golden age of Chinese football, when the world came to play.',
     blurbZh: '中国足球的金元时代，群星云集的东方赛场。',
+    disabled: true,
+    disabledLabel: 'Coming Soon',
+    disabledLabelZh: '即将上线',
   },
   {
     id: 'ucl',

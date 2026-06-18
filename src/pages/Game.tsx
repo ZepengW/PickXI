@@ -88,11 +88,14 @@ function SetupView() {
           {COMPETITIONS.map((c) => (
             <button
               key={c.id}
-              onClick={() => game.setCompetition(c.id)}
+              onClick={() => !c.disabled && game.setCompetition(c.id)}
+              disabled={c.disabled}
               className={`rounded-xl border p-3 text-left transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
-                competitionId === c.id
-                  ? 'border-accent bg-accent/10'
-                  : 'border-ink-700 hover:border-ink-500 bg-ink-900/40'
+                c.disabled
+                  ? 'border-ink-800 bg-ink-900/20 cursor-not-allowed opacity-50'
+                  : competitionId === c.id
+                    ? 'border-accent bg-accent/10'
+                    : 'border-ink-700 hover:border-ink-500 bg-ink-900/40'
               }`}
             >
               <div className="text-[10px] font-mono text-ink-400 mb-0.5">
@@ -101,9 +104,15 @@ function SetupView() {
               <div className="font-display font-bold text-sm text-ink-100 leading-tight">
                 {lang === 'zh' ? c.nameZh : c.name}
               </div>
-              <div className="text-[10px] font-mono text-ink-500 mt-1">
-                {c.matches} {lang === 'zh' ? '场' : 'games'} · {c.teamCount} {lang === 'zh' ? '队' : 'teams'}
-              </div>
+              {c.disabled ? (
+                <div className="text-[10px] font-mono text-ink-500 mt-1">
+                  {lang === 'zh' ? (c.disabledLabelZh || '即将上线') : (c.disabledLabel || 'Coming Soon')}
+                </div>
+              ) : (
+                <div className="text-[10px] font-mono text-ink-500 mt-1">
+                  {c.matches} {lang === 'zh' ? '场' : 'games'} · {c.teamCount} {lang === 'zh' ? '队' : 'teams'}
+                </div>
+              )}
             </button>
           ))}
         </div>

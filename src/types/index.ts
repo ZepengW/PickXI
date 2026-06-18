@@ -75,6 +75,11 @@ export interface Competition {
   accent: string;
   blurb: string;
   blurbZh: string;
+  /** If true, this competition is not yet ready and cannot be selected. */
+  disabled?: boolean;
+  /** Label shown when disabled (e.g. "Coming Soon"). */
+  disabledLabel?: string;
+  disabledLabelZh?: string;
 }
 
 export interface FormationSlot {
