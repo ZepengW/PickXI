@@ -540,46 +540,62 @@ export function simulateSeason(
   });
 
   // Generate simulated records for all opponent clubs.
+  // Each club plays every other club twice (home & away), producing a
+  // realistic league table where strong teams consistently beat weak ones.
   for (const opp of opponentPool) {
-    // Simulate this club's season against other opponents.
-    const oppMatches = matchCount;
     let oppWins = 0;
     let oppDraws = 0;
     let oppLosses = 0;
     let oppGF = 0;
     let oppGA = 0;
 
-    // Base strength determines expected performance.
-    const strengthFactor = (opp.strength - 70) / 20; // -0.5 to 1.0 roughly
-    const baseXG = 1.4 + strengthFactor * 0.3;
-    const baseXGA = 1.3 - strengthFactor * 0.2;
+    for (const other of opponentPool) {
+      if (other.id === opp.id) continue;
 
-    for (let i = 0; i < oppMatches; i++) {
-      // Simulate a match against a random opponent (not including user XI for simplicity).
-      const xgFor = clamp(baseXG + gaussian() * 0.6, 0.2, 4.5);
-      const xgAgainst = clamp(baseXGA + gaussian() * 0.6, 0.2, 4.5);
-      const gf = poisson(xgFor);
-      const ga = poisson(xgAgainst);
-      oppGF += gf;
-      oppGA += ga;
-      if (gf > ga) oppWins += 1;
-      else if (gf === ga) oppDraws += 1;
-      else oppLosses += 1;
+      // Simulate two matches (home & away) between these two clubs.
+      for (let leg = 0; leg < 2; leg++) {
+        const isHome = leg === 0;
+        const homeBoost = isHome ? 4 : 0;
+        const strengthDelta = opp.strength - other.strength + homeBoost;
+
+        // Expected goals based on strength difference
+        const xgFor = clamp(1.35 + strengthDelta * 0.045 + gaussian() * 0.45, 0.2, 4.5);
+        const xgAgainst = clamp(1.25 - strengthDelta * 0.04 + gaussian() * 0.45, 0.2, 4.5);
+
+        const gf = poisson(xgFor);
+        const ga = poisson(xgAgainst);
+        oppGF += gf;
+        oppGA += ga;
+        if (gf > ga) oppWins += 1;
+        else if (gf === ga) oppDraws += 1;
+        else oppLosses += 1;
+      }
     }
 
-    const oppPoints = oppWins * 3 + oppDraws;
+    // Scale to match the actual match count (opponentPool-1)*2 may differ from matchCount.
+    // If we have more/fewer simulated matches than needed, scale the results proportionally.
+    const simMatches = (opponentPool.length - 1) * 2;
+    const scale = simMatches > 0 ? matchCount / simMatches : 1;
+
+    const scaledWins = Math.round(oppWins * scale);
+    const scaledDraws = Math.round(oppDraws * scale);
+    const scaledLosses = matchCount - scaledWins - scaledDraws;
+    const scaledGF = Math.round(oppGF * scale);
+    const scaledGA = Math.round(oppGA * scale);
+
+    const oppPoints = scaledWins * 3 + scaledDraws;
     table.push({
       position: 0,
       clubId: opp.id,
       clubName: opp.shortName,
       clubNameZh: opp.shortNameZh,
-      played: oppMatches,
-      won: oppWins,
-      drawn: oppDraws,
-      lost: oppLosses,
-      goalsFor: oppGF,
-      goalsAgainst: oppGA,
-      goalDifference: oppGF - oppGA,
+      played: matchCount,
+      won: scaledWins,
+      drawn: scaledDraws,
+      lost: scaledLosses,
+      goalsFor: scaledGF,
+      goalsAgainst: scaledGA,
+      goalDifference: scaledGF - scaledGA,
       points: oppPoints,
       isUser: false,
     });
