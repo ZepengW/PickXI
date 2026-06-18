@@ -9,8 +9,7 @@ export const COMPETITIONS: Competition[] = [
     matches: 38,
     teamCount: 20,
     seasons: [
-      '2013-14', '2015-16', '2017-18',
-      '2019-20', '2020-21', '2021-22', '2022-23',
+      '2015-16', '2017-18', '2022-23',
     ],
     region: 'England',
     regionZh: '英格兰',
@@ -26,8 +25,7 @@ export const COMPETITIONS: Competition[] = [
     matches: 38,
     teamCount: 20,
     seasons: [
-      '2011-12', '2016-17', '2017-18',
-      '2019-20', '2020-21', '2021-22', '2022-23',
+      '2017-18', '2022-23',
     ],
     region: 'Spain',
     regionZh: '西班牙',
@@ -95,7 +93,7 @@ export const COMPETITIONS: Competition[] = [
     matches: 38,
     teamCount: 20,
     seasons: [
-      '2017-18', '2019-20', '2020-21', '2021-22', '2022-23',
+      '2017-18', '2022-23',
     ],
     region: 'Italy',
     regionZh: '意大利',
@@ -127,14 +125,14 @@ export const COMPETITION_MAP: Record<string, Competition> = Object.fromEntries(
 );
 
 export const CLUBS: Club[] = [
-  // --- EPL (20 teams) ---
+  // --- EPL (20 static + historical teams) ---
   { id: 'muni', name: 'Manchester United', nameZh: '曼联', shortName: 'Man Utd', shortNameZh: '曼联', color: '#da291c', color2: '#fbe122', competitionId: 'epl', strength: 86 },
   { id: 'ars', name: 'Arsenal', nameZh: '阿森纳', shortName: 'Arsenal', shortNameZh: '阿森纳', color: '#ef0107', color2: '#ffffff', competitionId: 'epl', strength: 84 },
   { id: 'che', name: 'Chelsea', nameZh: '切尔西', shortName: 'Chelsea', shortNameZh: '切尔西', color: '#034694', color2: '#dba111', competitionId: 'epl', strength: 83 },
   { id: 'liv', name: 'Liverpool', nameZh: '利物浦', shortName: 'Liverpool', shortNameZh: '利物浦', color: '#c8102e', color2: '#00b2a9', competitionId: 'epl', strength: 86 },
   { id: 'mci', name: 'Manchester City', nameZh: '曼城', shortName: 'Man City', shortNameZh: '曼城', color: '#6cabdd', color2: '#1c2c5b', competitionId: 'epl', strength: 89 },
   { id: 'tot', name: 'Tottenham Hotspur', nameZh: '热刺', shortName: 'Spurs', shortNameZh: '热刺', color: '#132257', color2: '#ffffff', competitionId: 'epl', strength: 80 },
-  { id: 'blc', name: 'Blackburn Rovers', nameZh: '布莱克本', shortName: 'Blackburn', shortNameZh: '布莱克本', color: '#009ee0', color2: '#ffffff', competitionId: 'epl', strength: 76 },
+  { id: 'blc', name: 'Blackburn Rovers', nameZh: '布莱克本', shortName: 'Blackburn', shortNameZh: '布莱克本', color: '#009ee0', color2: '#ffffff', competitionId: 'epl', strength: 73 },
   { id: 'lei', name: 'Leicester City', nameZh: '莱斯特城', shortName: 'Leicester', shortNameZh: '莱斯特城', color: '#003090', color2: '#fdbb30', competitionId: 'epl', strength: 79 },
   { id: 'eve', name: 'Everton', nameZh: '埃弗顿', shortName: 'Everton', shortNameZh: '埃弗顿', color: '#003399', color2: '#ffffff', competitionId: 'epl', strength: 75 },
   { id: 'new', name: 'Newcastle United', nameZh: '纽卡斯尔', shortName: 'Newcastle', shortNameZh: '纽卡', color: '#241f20', color2: '#ffffff', competitionId: 'epl', strength: 78 },
@@ -148,6 +146,21 @@ export const CLUBS: Club[] = [
   { id: 'sou', name: 'Southampton', nameZh: '南安普顿', shortName: 'Southampton', shortNameZh: '南安普顿', color: '#d71920', color2: '#ffffff', competitionId: 'epl', strength: 70 },
   { id: 'nor', name: 'Norwich City', nameZh: '诺维奇', shortName: 'Norwich', shortNameZh: '诺维奇', color: '#fff200', color2: '#00a651', competitionId: 'epl', strength: 69 },
   { id: 'wat', name: 'Watford', nameZh: '沃特福德', shortName: 'Watford', shortNameZh: '沃特福德', color: '#fbee23', color2: '#000000', competitionId: 'epl', strength: 70 },
+  // Historical EPL clubs (not always in every season)
+  { id: 'bur', name: 'Burnley', nameZh: '伯恩利', shortName: 'Burnley', shortNameZh: '伯恩利', color: '#6c1d45', color2: '#87ceeb', competitionId: 'epl', strength: 72 },
+  { id: 'lee', name: 'Leeds United', nameZh: '利兹联', shortName: 'Leeds', shortNameZh: '利兹联', color: '#ffffff', color2: '#0057b8', competitionId: 'epl', strength: 73 },
+  { id: 'shu', name: 'Sheffield United', nameZh: '谢菲尔德联', shortName: 'Sheff Utd', shortNameZh: '谢菲联', color: '#ee2737', color2: '#ffffff', competitionId: 'epl', strength: 70 },
+  { id: 'bre', name: 'Brentford', nameZh: '布伦特福德', shortName: 'Brentford', shortNameZh: '布伦特福德', color: '#e30613', color2: '#fbe122', competitionId: 'epl', strength: 73 },
+  { id: 'nfo', name: 'Nottingham Forest', nameZh: '诺丁汉森林', shortName: "Nott'm Forest", shortNameZh: '诺丁汉森林', color: '#dd0000', color2: '#ffffff', competitionId: 'epl', strength: 71 },
+  { id: 'wba', name: 'West Bromwich Albion', nameZh: '西布朗', shortName: 'West Brom', shortNameZh: '西布朗', color: '#122f67', color2: '#ffffff', competitionId: 'epl', strength: 70 },
+  { id: 'stk', name: 'Stoke City', nameZh: '斯托克城', shortName: 'Stoke', shortNameZh: '斯托克城', color: '#e03a3e', color2: '#ffffff', competitionId: 'epl', strength: 71 },
+  { id: 'swa', name: 'Swansea City', nameZh: '斯旺西', shortName: 'Swansea', shortNameZh: '斯旺西', color: '#ffffff', color2: '#000000', competitionId: 'epl', strength: 71 },
+  { id: 'sun', name: 'Sunderland', nameZh: '桑德兰', shortName: 'Sunderland', shortNameZh: '桑德兰', color: '#eb172b', color2: '#ffffff', competitionId: 'epl', strength: 70 },
+  { id: 'hul', name: 'Hull City', nameZh: '赫尔城', shortName: 'Hull', shortNameZh: '赫尔城', color: '#f5a12d', color2: '#000000', competitionId: 'epl', strength: 69 },
+  { id: 'car', name: 'Cardiff City', nameZh: '卡迪夫城', shortName: 'Cardiff', shortNameZh: '卡迪夫城', color: '#0070c0', color2: '#ffffff', competitionId: 'epl', strength: 68 },
+  { id: 'hud', name: 'Huddersfield Town', nameZh: '哈德斯菲尔德', shortName: 'Huddersfield', shortNameZh: '哈镇', color: '#0e63ad', color2: '#ffffff', competitionId: 'epl', strength: 68 },
+  { id: 'qpr', name: 'Queens Park Rangers', nameZh: 'QPR', shortName: 'QPR', shortNameZh: 'QPR', color: '#3a6bb5', color2: '#ffffff', competitionId: 'epl', strength: 68 },
+  { id: 'mbo', name: 'Middlesbrough', nameZh: '米德尔斯堡', shortName: 'Middlesbrough', shortNameZh: '米堡', color: '#e03a3e', color2: '#ffffff', competitionId: 'epl', strength: 69 },
 
   // --- La Liga (20 teams) ---
   { id: 'bar', name: 'FC Barcelona', nameZh: '巴塞罗那', shortName: 'Barça', shortNameZh: '巴萨', color: '#a50044', color2: '#004d98', competitionId: 'laliga', strength: 88 },
@@ -170,6 +183,19 @@ export const CLUBS: Club[] = [
   { id: 'ala', name: 'Alavés', nameZh: '阿拉维斯', shortName: 'Alavés', shortNameZh: '阿拉维斯', color: '#004d98', color2: '#ffffff', competitionId: 'laliga', strength: 70 },
   { id: 'lev', name: 'Levante', nameZh: '莱万特', shortName: 'Levante', shortNameZh: '莱万特', color: '#d5122e', color2: '#000000', competitionId: 'laliga', strength: 72 },
   { id: 'val2', name: 'Real Valladolid', nameZh: '巴拉多利德', shortName: 'Valladolid', shortNameZh: '巴拉多', color: '#0067b1', color2: '#ffffff', competitionId: 'laliga', strength: 70 },
+  // Historical La Liga clubs
+  { id: 'mlg', name: 'Málaga', nameZh: '马拉加', shortName: 'Málaga', shortNameZh: '马拉加', color: '#0067b1', color2: '#ffffff', competitionId: 'laliga', strength: 72 },
+  { id: 'rac', name: 'Racing Santander', nameZh: '桑坦德竞技', shortName: 'Racing', shortNameZh: '桑坦德', color: '#00954c', color2: '#ffffff', competitionId: 'laliga', strength: 68 },
+  { id: 'spg', name: 'Sporting Gijón', nameZh: '希洪竞技', shortName: 'Sporting', shortNameZh: '希洪', color: '#ee2523', color2: '#ffffff', competitionId: 'laliga', strength: 69 },
+  { id: 'zar', name: 'Real Zaragoza', nameZh: '萨拉戈萨', shortName: 'Zaragoza', shortNameZh: '萨拉戈萨', color: '#004d98', color2: '#ffffff', competitionId: 'laliga', strength: 70 },
+  { id: 'dep', name: 'Deportivo La Coruña', nameZh: '拉科鲁尼亚', shortName: 'Dépor', shortNameZh: '拉科', color: '#0057b8', color2: '#ffffff', competitionId: 'laliga', strength: 71 },
+  { id: 'eib', name: 'Eibar', nameZh: '埃瓦尔', shortName: 'Eibar', shortNameZh: '埃瓦尔', color: '#0067b1', color2: '#d5122e', competitionId: 'laliga', strength: 69 },
+  { id: 'lpa', name: 'Las Palmas', nameZh: '拉斯帕尔马斯', shortName: 'Las Palmas', shortNameZh: '拉斯帕尔马斯', color: '#fde100', color2: '#0067b1', competitionId: 'laliga', strength: 69 },
+  { id: 'leg', name: 'Leganés', nameZh: '莱加内斯', shortName: 'Leganés', shortNameZh: '莱加内斯', color: '#004d98', color2: '#ee2523', competitionId: 'laliga', strength: 69 },
+  { id: 'gir', name: 'Girona', nameZh: '赫罗纳', shortName: 'Girona', shortNameZh: '赫罗纳', color: '#ee2523', color2: '#ffffff', competitionId: 'laliga', strength: 72 },
+  { id: 'elc', name: 'Elche', nameZh: '埃尔切', shortName: 'Elche', shortNameZh: '埃尔切', color: '#0057b8', color2: '#ffffff', competitionId: 'laliga', strength: 68 },
+  { id: 'hsc', name: 'Huesca', nameZh: '韦斯卡', shortName: 'Huesca', shortNameZh: '韦斯卡', color: '#0067b1', color2: '#d5122e', competitionId: 'laliga', strength: 67 },
+  { id: 'alm', name: 'Almería', nameZh: '阿尔梅里亚', shortName: 'Almería', shortNameZh: '阿尔梅里亚', color: '#ee2523', color2: '#ffffff', competitionId: 'laliga', strength: 67 },
 
   // --- CSL (16 teams) ---
   { id: 'gzg', name: 'Guangzhou Evergrande', nameZh: '广州恒大', shortName: 'Guangzhou', shortNameZh: '恒大', color: '#e60012', color2: '#ffffff', competitionId: 'csl', strength: 75 },
@@ -278,6 +304,16 @@ export const CLUBS: Club[] = [
   { id: 'lec', name: 'Lecce', nameZh: '莱切', shortName: 'Lecce', shortNameZh: '莱切', color: '#fde100', color2: '#a11e22', competitionId: 'seriea', strength: 68 },
   { id: 'spe', name: 'Spezia', nameZh: '斯佩齐亚', shortName: 'Spezia', shortNameZh: '斯佩齐亚', color: '#000000', color2: '#ffffff', competitionId: 'seriea', strength: 67 },
   { id: 'sal', name: 'Salernitana', nameZh: '萨勒尼塔纳', shortName: 'Salernitana', shortNameZh: '萨勒尼塔纳', color: '#a11e22', color2: '#ffffff', competitionId: 'seriea', strength: 66 },
+  // Historical Serie A clubs
+  { id: 'chi', name: 'Chievo', nameZh: '切沃', shortName: 'Chievo', shortNameZh: '切沃', color: '#fde100', color2: '#0066cc', competitionId: 'seriea', strength: 70 },
+  { id: 'spl', name: 'SPAL', nameZh: '斯帕尔', shortName: 'SPAL', shortNameZh: '斯帕尔', color: '#0066cc', color2: '#ffffff', competitionId: 'seriea', strength: 67 },
+  { id: 'crt', name: 'Crotone', nameZh: '克罗托内', shortName: 'Crotone', shortNameZh: '克罗托内', color: '#a11e22', color2: '#0066cc', competitionId: 'seriea', strength: 66 },
+  { id: 'bnv', name: 'Benevento', nameZh: '贝内文托', shortName: 'Benevento', shortNameZh: '贝内文托', color: '#fde100', color2: '#a11e22', competitionId: 'seriea', strength: 66 },
+  { id: 'par', name: 'Parma', nameZh: '帕尔马', shortName: 'Parma', shortNameZh: '帕尔马', color: '#fde100', color2: '#0066cc', competitionId: 'seriea', strength: 72 },
+  { id: 'brc', name: 'Brescia', nameZh: '布雷西亚', shortName: 'Brescia', shortNameZh: '布雷西亚', color: '#0066cc', color2: '#ffffff', competitionId: 'seriea', strength: 67 },
+  { id: 'vnz', name: 'Venezia', nameZh: '威尼斯', shortName: 'Venezia', shortNameZh: '威尼斯', color: '#f56c12', color2: '#0066cc', competitionId: 'seriea', strength: 67 },
+  { id: 'mnz', name: 'Monza', nameZh: '蒙扎', shortName: 'Monza', shortNameZh: '蒙扎', color: '#ee2523', color2: '#ffffff', competitionId: 'seriea', strength: 70 },
+  { id: 'crm', name: 'Cremonese', nameZh: '克雷莫内塞', shortName: 'Cremonese', shortNameZh: '克雷莫内塞', color: '#a11e22', color2: '#ffffff', competitionId: 'seriea', strength: 66 },
 
   // --- Bundesliga (18 teams) ---
   { id: 'bay', name: 'Bayern München', nameZh: '拜仁慕尼黑', shortName: 'Bayern', shortNameZh: '拜仁', color: '#dc052d', color2: '#0066b2', competitionId: 'bundesliga', strength: 88 },
@@ -298,11 +334,57 @@ export const CLUBS: Club[] = [
   { id: 'her', name: 'Hertha Berlin', nameZh: '柏林赫塔', shortName: 'Hertha', shortNameZh: '柏林赫塔', color: '#0066b2', color2: '#ffffff', competitionId: 'bundesliga', strength: 68 },
   { id: 'sch', name: 'Schalke 04', nameZh: '沙尔克04', shortName: 'Schalke', shortNameZh: '沙尔克', color: '#0066b2', color2: '#ffffff', competitionId: 'bundesliga', strength: 70 },
   { id: 'kol', name: 'FC Köln', nameZh: '科隆', shortName: 'Köln', shortNameZh: '科隆', color: '#e32221', color2: '#ffffff', competitionId: 'bundesliga', strength: 71 },
+  // Historical Bundesliga clubs
+  { id: 'kai', name: '1. FC Kaiserslautern', nameZh: '凯泽斯劳滕', shortName: 'Kaiserslautern', shortNameZh: '凯泽', color: '#ee2523', color2: '#ffffff', competitionId: 'bundesliga', strength: 70 },
+  { id: 'm86', name: 'TSV 1860 Munich', nameZh: '慕尼黑1860', shortName: '1860 Munich', shortNameZh: '1860', color: '#0066b2', color2: '#ffffff', competitionId: 'bundesliga', strength: 68 },
+  { id: 'ham', name: 'Hamburger SV', nameZh: '汉堡', shortName: 'Hamburg', shortNameZh: '汉堡', color: '#0066b2', color2: '#ffffff', competitionId: 'bundesliga', strength: 73 },
+  { id: 'cot', name: 'Energie Cottbus', nameZh: '科特布斯', shortName: 'Cottbus', shortNameZh: '科特布斯', color: '#ee2523', color2: '#ffffff', competitionId: 'bundesliga', strength: 66 },
+  { id: 'ros', name: 'Hansa Rostock', nameZh: '汉莎罗斯托克', shortName: 'Rostock', shortNameZh: '罗斯托克', color: '#0066b2', color2: '#ffffff', competitionId: 'bundesliga', strength: 66 },
+  { id: 'nur', name: '1. FC Nürnberg', nameZh: '纽伦堡', shortName: 'Nürnberg', shortNameZh: '纽伦堡', color: '#a11e22', color2: '#ffffff', competitionId: 'bundesliga', strength: 68 },
+  { id: 'stp', name: 'FC St. Pauli', nameZh: '圣保利', shortName: 'St. Pauli', shortNameZh: '圣保利', color: '#a11e22', color2: '#ffffff', competitionId: 'bundesliga', strength: 67 },
+  { id: 'h96', name: 'Hannover 96', nameZh: '汉诺威96', shortName: 'Hannover', shortNameZh: '汉诺威', color: '#ee2523', color2: '#000000', competitionId: 'bundesliga', strength: 70 },
+  { id: 'dus', name: 'Fortuna Düsseldorf', nameZh: '杜塞尔多夫', shortName: 'Düsseldorf', shortNameZh: '杜塞', color: '#ee2523', color2: '#ffffff', competitionId: 'bundesliga', strength: 68 },
+  { id: 'fut', name: 'Greuther Fürth', nameZh: '菲尔特', shortName: 'Fürth', shortNameZh: '菲尔特', color: '#0066b2', color2: '#ffffff', competitionId: 'bundesliga', strength: 66 },
+  { id: 'pad', name: 'SC Paderborn', nameZh: '帕德博恩', shortName: 'Paderborn', shortNameZh: '帕德博恩', color: '#0066b2', color2: '#ee2523', competitionId: 'bundesliga', strength: 65 },
+  { id: 'bie', name: 'Arminia Bielefeld', nameZh: '比勒费尔德', shortName: 'Bielefeld', shortNameZh: '比勒费', color: '#0066b2', color2: '#ffffff', competitionId: 'bundesliga', strength: 67 },
 ];
 
 export const CLUB_MAP: Record<string, Club> = Object.fromEntries(
   CLUBS.map((c) => [c.id, c]),
 );
+
+/**
+ * Season-specific club lists.
+ * Maps (competitionId, season) → array of club IDs that participated.
+ * This ensures historical accuracy — e.g. Norwich and Watford were not in
+ * EPL 2022-23, Blackburn haven't been in EPL since 2012.
+ *
+ * If a season is not listed here, the system falls back to all static clubs
+ * for that competition (the old behaviour).
+ */
+export const SEASON_CLUBS: Record<string, Record<string, string[]>> = {
+  epl: {
+    '2015-16': ['muni','ars','che','liv','mci','tot','eve','new','sou','whu','ast','wba','stk','swa','cry','sun','lei','wat','bou','nor'],
+    '2017-18': ['muni','ars','che','liv','mci','tot','eve','new','sou','whu','cry','lei','wat','bou','wba','bri','swa','stk','bur','hud'],
+    '2022-23': ['muni','ars','che','liv','mci','tot','eve','new','sou','whu','cry','lei','bri','wlv','ast','lee','bre','ful','bou','nfo'],
+  },
+  laliga: {
+    '2017-18': ['ala','ath','atm','bar','cel','dep','eib','esp','get','gir','lpa','leg','lev','mlg','bet','rma','soc','sev','val','vil'],
+    '2022-23': ['alm','ath','atm','bar','cad','cel','elc','esp','get','gir','mal','osa','ray','bet','rma','soc','sev','val','val2','vil'],
+  },
+  seriea: {
+    '2017-18': ['juv','nap','rom','int','laz','mil','ata','fio','tor','sam','sas','gen','chi','udc','bol','cag','spl','crt','ver','bnv'],
+    '2022-23': ['nap','laz','int','mil','ata','rom','juv','fio','bol','mnz','tor','udc','sas','emp','ver','sal','lec','spe','crm','sam'],
+  },
+  bundesliga: {
+    '2022-23': ['bay','dor','lei2','uni','fre','lev','sge','wol','mai','glb','kol','hof','brem','boe','aug','stu','sch','her'],
+  },
+};
+
+/** Get the club IDs for a specific competition+season. Returns null if not defined. */
+export function getSeasonClubIds(competitionId: string, season: string): string[] | null {
+  return SEASON_CLUBS[competitionId]?.[season] ?? null;
+}
 
 export function clubsForCompetition(competitionId: string): Club[] {
   return CLUBS.filter((c) => c.competitionId === competitionId);
