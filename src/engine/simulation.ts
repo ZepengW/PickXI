@@ -1,5 +1,7 @@
 import type {
   Attributes,
+  ChemistryLink,
+  ChemistryResult,
   Club,
   MatchResult,
   MatchOutcome,
@@ -129,11 +131,123 @@ export function positionPenalty(
   return compatPenalty;
 }
 
+// ---- Chemistry (FIFA-style) -------------------------------------------------
+
+/**
+ * Adjacency map for formation slots.
+ * Two slots are "adjacent" if their players should have a chemistry link.
+ * Inspired by FIFA: each player links to nearby position neighbours.
+ * We define adjacency by position group proximity on the pitch.
+ */
+const ADJACENCY: Record<string, string[]> = {
+  // 4-3-3
+  gk: ['cb1', 'cb2'],
+  lb: ['cb1', 'cm1'],
+  cb1: ['gk', 'lb', 'cb2', 'cm1', 'cm2'],
+  cb2: ['gk', 'rb', 'cb1', 'cm2', 'cm3'],
+  rb: ['cb2', 'cm3'],
+  cm1: ['lb', 'cb1', 'cm2', 'lw', 'cm3'],
+  cm2: ['cb1', 'cb2', 'cm1', 'cm3', 'st'],
+  cm3: ['cb2', 'rb', 'cm2', 'cm1', 'rw'],
+  lw: ['cm1', 'st'],
+  st: ['cm2', 'lw', 'rw'],
+  rw: ['cm3', 'st'],
+  // 4-4-2
+  lm: ['lb', 'cm1', 'st1'],
+  rm: ['rb', 'cm2', 'st2'],
+  st1: ['lm', 'cm1', 'st2'],
+  st2: ['rm', 'cm2', 'st1'],
+  // 3-5-2
+  cb3: ['cb2', 'rwb'],
+  lwb: ['cb1', 'cm1'],
+  cdm: ['cb1', 'cb2', 'cb3', 'cm1', 'cm2'],
+  rwb: ['cb3', 'cm2'],
+  // 4-2-3-1
+  cdm1: ['cb1', 'cb2', 'cdm2', 'lw'],
+  cdm2: ['cb1', 'cb2', 'cdm1', 'rw'],
+  cam: ['cdm1', 'cdm2', 'lw', 'rw', 'st'],
+  // 4-5-1
+  // 3-4-3
+  // 4-1-4-1
+  // 5-3-2
+  // 4-4-2 Diamond
+  // 3-6-1
+};
+
+/** Get adjacency list for a slot, with fallback to position-group neighbours. */
+function getAdjacent(slotId: string, allSlotIds: string[]): string[] {
+  // Try explicit adjacency first
+  if (ADJACENCY[slotId]) {
+    return ADJACENCY[slotId].filter((id) => allSlotIds.includes(id));
+  }
+  return [];
+}
+
+/** Chemistry bonus values. */
+const CHEM_CLUB_BONUS = 3;   // same club
+const CHEM_NATION_BONUS = 1; // same nationality
+
+/**
+ * Calculate chemistry for a squad.
+ * Each adjacent pair of filled slots generates a link:
+ * - Same club → +3 bonus (green line)
+ * - Same nationality → +1 bonus (yellow line)
+ * - No link → 0 (no line drawn)
+ */
+export function calculateChemistry(slots: SquadSlot[]): ChemistryResult {
+  const filled = slots.filter((s) => s.player !== null);
+  const allSlotIds = slots.map((s) => s.slotId);
+  const links: ChemistryLink[] = [];
+  const seen = new Set<string>();
+
+  for (const slot of filled) {
+    const neighbours = getAdjacent(slot.slotId, allSlotIds);
+    for (const neighbourId of neighbours) {
+      const neighbour = slots.find((s) => s.slotId === neighbourId);
+      if (!neighbour?.player) continue;
+
+      // Avoid duplicate links (A→B and B→A)
+      const key = [slot.slotId, neighbourId].sort().join('-');
+      if (seen.has(key)) continue;
+      seen.add(key);
+
+      const p1 = slot.player!;
+      const p2 = neighbour.player!;
+
+      let type: ChemistryLink['type'] = 'none';
+      let bonus = 0;
+
+      if (p1.clubId === p2.clubId) {
+        type = 'club';
+        bonus = CHEM_CLUB_BONUS;
+      } else if (p1.nationality === p2.nationality) {
+        type = 'nation';
+        bonus = CHEM_NATION_BONUS;
+      }
+
+      links.push({
+        fromSlotId: slot.slotId,
+        toSlotId: neighbourId,
+        type,
+        bonus,
+      });
+    }
+  }
+
+  const totalBonus = links.reduce((sum, l) => sum + l.bonus, 0);
+  // Max possible: ~20 links * 3 = 60. Scale to 0-100.
+  const maxPossible = 60;
+  const rating = Math.round(Math.min(100, (totalBonus / maxPossible) * 100));
+
+  return { links, totalBonus, rating };
+}
+
 // ---- Team strength ----------------------------------------------------------
 
 /**
  * Compute overall team strength (0-100) from a filled XI.
- * Accounts for position fit — players in secondary positions contribute less.
+ * Accounts for position fit and chemistry — players in secondary positions
+ * contribute less, while chemistry links provide a bonus.
  */
 export function teamStrength(slots: SquadSlot[]): {
   overall: number;
@@ -144,6 +258,16 @@ export function teamStrength(slots: SquadSlot[]): {
   const filled = slots.filter((s) => s.player !== null);
   if (filled.length === 0) {
     return { overall: 50, attack: 50, midfield: 50, defence: 50 };
+  }
+
+  // Calculate chemistry bonus per player
+  const chem = calculateChemistry(slots);
+  const chemBonusPerSlot: Record<string, number> = {};
+  for (const link of chem.links) {
+    if (link.bonus > 0) {
+      chemBonusPerSlot[link.fromSlotId] = (chemBonusPerSlot[link.fromSlotId] ?? 0) + link.bonus;
+      chemBonusPerSlot[link.toSlotId] = (chemBonusPerSlot[link.toSlotId] ?? 0) + link.bonus;
+    }
   }
 
   let totalWeight = 0;
@@ -159,7 +283,8 @@ export function teamStrength(slots: SquadSlot[]): {
     const pl = slot.player!;
     const w = POSITION_WEIGHT[slot.position] ?? 1;
     const penalty = positionPenalty(pl, slot.position);
-    const effectiveRating = Math.max(30, pl.rating - penalty);
+    const chemBonus = chemBonusPerSlot[slot.slotId] ?? 0;
+    const effectiveRating = Math.max(30, pl.rating - penalty + chemBonus);
     const attrAvg = avgAttr(pl.attr);
     const score = effectiveRating * 0.6 + attrAvg * 0.4;
     totalWeight += w;

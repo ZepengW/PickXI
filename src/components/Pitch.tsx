@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import type { Player, SquadSlot } from '../types';
+import type { ChemistryLink, Player, SquadSlot } from '../types';
 import { getFormation } from '../data';
 import { useLang } from '../i18n/useLang';
 import { positionGroup, positionFit, positionPenalty } from '../engine/simulation';
@@ -22,6 +22,10 @@ interface PitchProps {
   showRatings?: boolean;
   /** Show position recommendation highlights (primary/secondary/other). */
   showPosition?: boolean;
+  /** Show chemistry lines between players. */
+  showChemistry?: boolean;
+  /** Chemistry links to draw. */
+  chemistryLinks?: ChemistryLink[];
   compact?: boolean;
 }
 
@@ -35,6 +39,8 @@ export default function Pitch({
   onMovePlayer,
   showRatings = true,
   showPosition = true,
+  showChemistry = false,
+  chemistryLinks = [],
   compact = false,
 }: PitchProps) {
   const { lang } = useLang();
@@ -78,6 +84,44 @@ export default function Pitch({
           <path d="M 38 80 A 9 9 0 0 1 62 80" />
         </g>
       </svg>
+
+      {/* Chemistry lines */}
+      {showChemistry && chemistryLinks.length > 0 && (
+        <svg
+          viewBox="0 0 100 100"
+          className="absolute inset-0 w-full h-full pointer-events-none z-[1]"
+          preserveAspectRatio="none"
+          aria-hidden="true"
+        >
+          {chemistryLinks.map((link) => {
+            const fromSlot = formation.slots.find((s) => s.id === link.fromSlotId);
+            const toSlot = formation.slots.find((s) => s.id === link.toSlotId);
+            if (!fromSlot || !toSlot || link.type === 'none') return null;
+
+            const x1 = fromSlot.x;
+            const y1 = 100 - fromSlot.y;
+            const x2 = toSlot.x;
+            const y2 = 100 - toSlot.y;
+
+            const color = link.type === 'club' ? '#22c55e' : '#facc15';
+            const opacity = link.type === 'club' ? 0.7 : 0.5;
+
+            return (
+              <line
+                key={`${link.fromSlotId}-${link.toSlotId}`}
+                x1={x1}
+                y1={y1}
+                x2={x2}
+                y2={y2}
+                stroke={color}
+                strokeWidth={link.type === 'club' ? 0.8 : 0.5}
+                strokeOpacity={opacity}
+                strokeDasharray={link.type === 'nation' ? '2 1' : undefined}
+              />
+            );
+          })}
+        </svg>
+      )}
 
       {/* Slots */}
       {formation.slots.map((fs, idx) => {

@@ -115,6 +115,25 @@ export interface MatchResult {
 
 export type MatchOutcome = 'W' | 'D' | 'L';
 
+/** Chemistry link between two adjacent players on the pitch. */
+export interface ChemistryLink {
+  fromSlotId: string;
+  toSlotId: string;
+  /** Link strength: 'club' = same club (strongest), 'nation' = same nationality, 'none' = no link. */
+  type: 'club' | 'nation' | 'none';
+  /** Bonus value applied to both players. */
+  bonus: number;
+}
+
+/** Chemistry summary for the whole squad. */
+export interface ChemistryResult {
+  links: ChemistryLink[];
+  /** Total chemistry bonus (sum of all link bonuses, each counted once per pair). */
+  totalBonus: number;
+  /** Chemistry rating 0-100. */
+  rating: number;
+}
+
 /** A single team's row in the final league table. */
 export interface TableEntry {
   position: number;
@@ -183,6 +202,8 @@ export interface DifficultyConfig {
   showNationality: boolean;
   /** Show team strength bars. */
   showTeamScore: boolean;
+  /** Show chemistry lines between players. */
+  showChemistry: boolean;
 }
 
 export const DIFFICULTY_CONFIGS: Record<Difficulty, DifficultyConfig> = {
@@ -192,6 +213,7 @@ export const DIFFICULTY_CONFIGS: Record<Difficulty, DifficultyConfig> = {
     showTier: true,
     showNationality: true,
     showTeamScore: true,
+    showChemistry: true,
   },
   normal: {
     showRatings: true,
@@ -199,6 +221,7 @@ export const DIFFICULTY_CONFIGS: Record<Difficulty, DifficultyConfig> = {
     showTier: true,
     showNationality: true,
     showTeamScore: false,
+    showChemistry: true,
   },
   hard: {
     showRatings: false,
@@ -206,6 +229,7 @@ export const DIFFICULTY_CONFIGS: Record<Difficulty, DifficultyConfig> = {
     showTier: false,
     showNationality: true,
     showTeamScore: false,
+    showChemistry: false,
   },
   divine: {
     showRatings: false,
@@ -213,5 +237,6 @@ export const DIFFICULTY_CONFIGS: Record<Difficulty, DifficultyConfig> = {
     showTier: false,
     showNationality: false,
     showTeamScore: false,
+    showChemistry: false,
   },
 };

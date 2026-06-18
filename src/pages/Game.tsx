@@ -14,7 +14,7 @@ import {
   clubSeasonsFor,
   playersForClubSeason,
 } from '../data';
-import { teamStrength } from '../engine/simulation';
+import { teamStrength, calculateChemistry } from '../engine/simulation';
 import { DIFFICULTY_CONFIGS } from '../types';
 import type { Difficulty, Player, SquadSlot } from '../types';
 import type { StringKey } from '../i18n/strings';
@@ -80,12 +80,6 @@ function SetupView() {
         <h1 className="font-display font-black text-3xl sm:text-4xl tracking-tightest text-ink-100">
           {t('setupTitle')}
         </h1>
-        <button
-          onClick={() => game.restartAll()}
-          className="px-4 py-2 text-xs font-medium border border-ink-700 text-ink-400 rounded-full hover:border-red-500 hover:text-red-400 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
-        >
-          {t('restartAll')}
-        </button>
       </div>
 
       {/* Competition */}
@@ -223,12 +217,18 @@ function SetupView() {
         </p>
       </Section>
 
-      <div className="mt-8 flex justify-center">
+      <div className="mt-8 flex justify-center gap-3">
         <button
           onClick={() => game.startDraft()}
           className="px-10 py-4 bg-accent text-ink-950 font-bold rounded-full hover:bg-accent-dark transition-colors text-base focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-ink-950"
         >
           {t('startDraft')} →
+        </button>
+        <button
+          onClick={() => game.restartAll()}
+          className="px-6 py-4 text-sm font-medium border border-ink-700 text-ink-400 rounded-full hover:border-red-500 hover:text-red-400 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+        >
+          {t('restartAll')}
         </button>
       </div>
     </motion.div>
@@ -276,6 +276,7 @@ function DraftView() {
   }, [spin, draftedSet]);
 
   const strength = teamStrength(slots);
+  const chemistry = useMemo(() => calculateChemistry(slots), [slots]);
 
   function handleSimulate() {
     if (!complete) return;
@@ -410,8 +411,27 @@ function DraftView() {
       <div className="flex-1 grid grid-cols-1 lg:grid-cols-[minmax(360px,1fr)_minmax(0,1.2fr)] gap-4 p-4 sm:p-6 min-h-0">
         {/* Left: Pitch + strength bars + bench */}
         <div className="flex flex-col gap-3 min-h-0">
-          {/* Strength bars — hidden in divine difficulty */}
+          {/* Strength bars + chemistry — hidden in divine/hard difficulty */}
           {diffCfg.showTeamScore && <StrengthBars strength={strength} t={t} />}
+          {diffCfg.showChemistry && filled > 0 && (
+            <div className="flex items-center gap-3 px-2">
+              <div className="flex items-center gap-1.5">
+                <div className="w-3 h-0.5 bg-green-500 rounded" />
+                <span className="text-[10px] text-ink-400 font-mono">
+                  {lang === 'zh' ? '同队 +3' : 'Club +3'}
+                </span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <div className="w-3 h-0.5 bg-yellow-400 rounded" style={{ borderTop: '1px dashed #facc15' }} />
+                <span className="text-[10px] text-ink-400 font-mono">
+                  {lang === 'zh' ? '同国 +1' : 'Nation +1'}
+                </span>
+              </div>
+              <div className="ml-auto text-xs font-mono text-ink-300">
+                {lang === 'zh' ? '默契' : 'Chem'} <span className="text-accent font-bold">{chemistry.rating}</span>
+              </div>
+            </div>
+          )}
 
           {/* Pitch — takes available space, but on mobile limit height */}
           <div className="flex-1 flex items-center justify-center min-h-0">
@@ -426,6 +446,8 @@ function DraftView() {
                 onMovePlayer={handleMovePlayer}
                 showRatings={diffCfg.showRatings}
                 showPosition={diffCfg.showPosition}
+                showChemistry={diffCfg.showChemistry}
+                chemistryLinks={chemistry.links}
               />
             </div>
           </div>
@@ -460,9 +482,33 @@ function DraftView() {
           )}
         </div>
 
-        {/* Right: wheel or squad picker — hidden when XI is complete */}
-        {!complete && (
+        {/* Right: wheel, squad picker, or simulate button */}
         <div className="rounded-2xl border border-ink-800 bg-ink-900/40 p-4 sm:p-5 flex flex-col min-h-0">
+          {complete ? (
+            <motion.div
+              key="simulate"
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="flex flex-col items-center justify-center flex-1 gap-6"
+            >
+              <div className="text-center">
+                <h2 className="font-display font-bold text-xl text-ink-100 mb-2">
+                  {lang === 'zh' ? '阵容已满！' : 'Squad Complete!'}
+                </h2>
+                <p className="text-sm text-ink-400">
+                  {lang === 'zh' ? '11名球员已就位，准备开始赛季模拟。' : 'All 11 players are set. Ready to simulate the season.'}
+                </p>
+              </div>
+              {diffCfg.showTeamScore && <StrengthBars strength={strength} t={t} />}
+              <button
+                onClick={handleSimulate}
+                disabled={simulating}
+                className="px-10 py-4 bg-accent text-ink-950 font-bold rounded-full hover:bg-accent-dark transition-colors text-base focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-ink-950 disabled:opacity-50"
+              >
+                {simulating ? t('simulating') : t('simulate')}
+              </button>
+            </motion.div>
+          ) : (
           <AnimatePresence mode="wait">
             {pendingPlayer ? (
               <motion.div
@@ -572,8 +618,8 @@ function DraftView() {
               </motion.div>
             )}
           </AnimatePresence>
+          )}
         </div>
-        )}
       </div>
     </motion.div>
   );
