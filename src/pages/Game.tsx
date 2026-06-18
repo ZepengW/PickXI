@@ -576,8 +576,9 @@ function DraftView() {
                     {lang === 'zh' ? pendingPlayer.nameZh : pendingPlayer.name}
                   </div>
                   <div className="text-[10px] sm:text-xs text-ink-400 font-mono">
-                    {pendingPlayer.position}
-                    {diffCfg.showNationality && ` · ${lang === 'zh' ? pendingPlayer.nationalityZh : pendingPlayer.nationality}`}
+                    {diffCfg.showPosition && pendingPlayer.position}
+                    {diffCfg.showPosition && diffCfg.showNationality && ' · '}
+                    {diffCfg.showNationality && `${lang === 'zh' ? pendingPlayer.nationalityZh : pendingPlayer.nationality}`}
                   </div>
                   {diffCfg.showRatings && (
                     <div className="grid grid-cols-6 gap-1 sm:gap-2 mt-1 sm:mt-2">
