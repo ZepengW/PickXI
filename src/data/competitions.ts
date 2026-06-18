@@ -9,7 +9,7 @@ export const COMPETITIONS: Competition[] = [
     matches: 38,
     teamCount: 20,
     seasons: [
-      '2015-16', '2017-18', '2022-23',
+      '2017-18', '2020-21', '2022-23',
     ],
     region: 'England',
     regionZh: '英格兰',
@@ -25,7 +25,7 @@ export const COMPETITIONS: Competition[] = [
     matches: 38,
     teamCount: 20,
     seasons: [
-      '2017-18', '2022-23',
+      '2017-18', '2020-21', '2022-23',
     ],
     region: 'Spain',
     regionZh: '西班牙',
@@ -93,7 +93,7 @@ export const COMPETITIONS: Competition[] = [
     matches: 38,
     teamCount: 20,
     seasons: [
-      '2017-18', '2022-23',
+      '2017-18', '2020-21', '2022-23',
     ],
     region: 'Italy',
     regionZh: '意大利',
@@ -109,8 +109,7 @@ export const COMPETITIONS: Competition[] = [
     matches: 34,
     teamCount: 18,
     seasons: [
-      '2001-02', '2012-13', '2017-18',
-      '2019-20', '2020-21', '2022-23',
+      '2017-18', '2020-21', '2022-23',
     ],
     region: 'Germany',
     regionZh: '德国',
@@ -364,19 +363,23 @@ export const CLUB_MAP: Record<string, Club> = Object.fromEntries(
  */
 export const SEASON_CLUBS: Record<string, Record<string, string[]>> = {
   epl: {
-    '2015-16': ['muni','ars','che','liv','mci','tot','eve','new','sou','whu','ast','wba','stk','swa','cry','sun','lei','wat','bou','nor'],
     '2017-18': ['muni','ars','che','liv','mci','tot','eve','new','sou','whu','cry','lei','wat','bou','wba','bri','swa','stk','bur','hud'],
+    '2020-21': ['muni','ars','che','liv','mci','tot','eve','new','sou','whu','cry','lei','bri','bur','wlv','ast','lee','ful','wba','shu'],
     '2022-23': ['muni','ars','che','liv','mci','tot','eve','new','sou','whu','cry','lei','bri','wlv','ast','lee','bre','ful','bou','nfo'],
   },
   laliga: {
     '2017-18': ['ala','ath','atm','bar','cel','dep','eib','esp','get','gir','lpa','leg','lev','mlg','bet','rma','soc','sev','val','vil'],
+    '2020-21': ['ala','ath','atm','bar','cad','cel','eib','elc','get','gra','hsc','lev','osa','bet','rma','soc','sev','val','val2','vil'],
     '2022-23': ['alm','ath','atm','bar','cad','cel','elc','esp','get','gir','mal','osa','ray','bet','rma','soc','sev','val','val2','vil'],
   },
   seriea: {
     '2017-18': ['juv','nap','rom','int','laz','mil','ata','fio','tor','sam','sas','gen','chi','udc','bol','cag','spl','crt','ver','bnv'],
+    '2020-21': ['int','mil','ata','juv','nap','laz','rom','sas','sam','ver','gen','bol','fio','udc','spe','cag','tor','bnv','crt','par'],
     '2022-23': ['nap','laz','int','mil','ata','rom','juv','fio','bol','mnz','tor','udc','sas','emp','ver','sal','lec','spe','crm','sam'],
   },
   bundesliga: {
+    '2017-18': ['bay','sch','hof','dor','lev','lei2','stu','sge','glb','her','brem','aug','h96','mai','fre','wol','ham','kol'],
+    '2020-21': ['bay','lei2','dor','wol','sge','lev','uni','glb','stu','fre','her','hof','kol','mai','aug','bie','brem','sch'],
     '2022-23': ['bay','dor','lei2','uni','fre','lev','sge','wol','mai','glb','kol','hof','brem','boe','aug','stu','sch','her'],
   },
 };

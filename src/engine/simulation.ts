@@ -11,7 +11,7 @@ import type {
   SquadSlot,
   TableEntry,
 } from '../types';
-import { CLUB_MAP, getCompetition, clubsForSeason, allClubsForCompetition } from '../data';
+import { CLUB_MAP, getCompetition, clubsForSeason, allClubsForCompetition, getSeasonClubIds } from '../data';
 
 // ---- Position weighting & grouping -----------------------------------------
 
@@ -396,18 +396,25 @@ export function simulateSeason(
   const { attack, defence } = teamStrength(slots);
 
   // Build opponent pool.
-  // Strategy:
-  // - Leagues (EPL, La Liga, Serie A, Bundesliga, CSL): use dynamic clubs
-  //   from player data for the specific season, then pad with static
-  //   clubs to reach teamCount. This preserves promotion/relegation feel
-  //   while ensuring enough opponents for a full season.
-  // - Cups (WC, UCL): use ALL statically-defined clubs (32 nations / elite
-  //   clubs). Cups don't need player-data filtering because opponents don't
-  //   need to be user-draftable — they just need a strength rating.
+  // Priority:
+  // 1. If SEASON_CLUBS has an exact mapping for this competition+season, use it.
+  //    This gives historically accurate team lists (correct promotion/relegation).
+  // 2. For cups (WC, UCL): use all static clubs (32 teams).
+  // 3. Fallback: dynamic clubs from player data + static padding.
   const isCupComp = comp?.type === 'cup';
   let oppClubs: Club[];
 
-  if (isCupComp) {
+  // Try season-specific club list first (most accurate)
+  const seasonClubIds = opponentSeason
+    ? getSeasonClubIds(competitionId, opponentSeason)
+    : null;
+
+  if (seasonClubIds && seasonClubIds.length > 0) {
+    // Use the explicitly defined season club list
+    oppClubs = seasonClubIds
+      .map((id) => CLUB_MAP[id])
+      .filter((c): c is Club => c != null);
+  } else if (isCupComp) {
     // Cups: 32 static teams
     oppClubs = Object.values(CLUB_MAP).filter(
       (c) => c.competitionId === competitionId,

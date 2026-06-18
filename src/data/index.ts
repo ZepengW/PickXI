@@ -1,5 +1,5 @@
 import type { Club, Competition, Player } from '../types';
-import { CLUBS, CLUB_MAP, COMPETITIONS, COMPETITION_MAP, clubsForCompetition } from './competitions';
+import { CLUBS, CLUB_MAP, COMPETITIONS, COMPETITION_MAP, clubsForCompetition, getSeasonClubIds } from './competitions';
 import { FORMATIONS, getFormation } from './formations';
 import { EPL_PLAYERS } from './players/epl';
 import { LALIGA_PLAYERS } from './players/laliga';
@@ -23,7 +23,7 @@ export const ALL_PLAYERS: Player[] = [
   ...FM_EXTRA_PLAYERS,
 ];
 
-export { COMPETITIONS, COMPETITION_MAP, CLUBS, CLUB_MAP, clubsForCompetition, FORMATIONS, getFormation };
+export { COMPETITIONS, COMPETITION_MAP, CLUBS, CLUB_MAP, clubsForCompetition, getSeasonClubIds, FORMATIONS, getFormation };
 
 /** A club-season pair that has at least one player available to draft. */
 export interface ClubSeason {
