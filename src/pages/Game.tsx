@@ -356,17 +356,15 @@ function DraftView() {
           >
             {t('restartAll')}
           </button>
-          <button
-            onClick={handleSimulate}
-            disabled={!complete || simulating}
-            className={`px-7 py-3 rounded-full font-bold text-base transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
-              complete
-                ? 'bg-accent text-ink-950 hover:bg-accent-dark'
-                : 'bg-ink-800 text-ink-500 cursor-not-allowed'
-            }`}
-          >
-            {simulating ? t('simulating') : t('simulate')}
-          </button>
+          {complete && (
+            <button
+              onClick={handleSimulate}
+              disabled={simulating}
+              className="px-7 py-3 rounded-full font-bold text-base bg-accent text-ink-950 hover:bg-accent-dark transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent disabled:opacity-50"
+            >
+              {simulating ? t('simulating') : t('simulate')}
+            </button>
+          )}
         </div>
       </div>
 
@@ -500,13 +498,25 @@ function DraftView() {
                 </p>
               </div>
               {diffCfg.showTeamScore && <StrengthBars strength={strength} t={t} />}
-              <button
-                onClick={handleSimulate}
-                disabled={simulating}
-                className="px-10 py-4 bg-accent text-ink-950 font-bold rounded-full hover:bg-accent-dark transition-colors text-base focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-ink-950 disabled:opacity-50"
-              >
-                {simulating ? t('simulating') : t('simulate')}
-              </button>
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={handleSimulate}
+                  disabled={simulating}
+                  className="px-10 py-4 bg-accent text-ink-950 font-bold rounded-full hover:bg-accent-dark transition-colors text-base focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-ink-950 disabled:opacity-50"
+                >
+                  {simulating ? t('simulating') : t('simulate')}
+                </button>
+                <button
+                  onClick={() => {
+                    if (confirm(lang === 'zh' ? '确定要完全重新开始吗？' : 'Restart completely?')) {
+                      game.restartAll();
+                    }
+                  }}
+                  className="px-6 py-4 text-sm font-medium border border-ink-700 text-ink-400 rounded-full hover:border-red-500 hover:text-red-400 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+                >
+                  {t('restartAll')}
+                </button>
+              </div>
             </motion.div>
           ) : (
           <AnimatePresence mode="wait">
