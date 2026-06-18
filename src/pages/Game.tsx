@@ -404,15 +404,15 @@ function DraftView() {
         )}
       </AnimatePresence>
 
-      {/* Main content — on mobile: pitch and wheel/picker side by side.
-          On lg+: two columns with more spacing. */}
-      <div className="flex-1 grid grid-cols-[1fr_1fr] lg:grid-cols-[minmax(360px,1fr)_minmax(0,1.2fr)] gap-2 sm:gap-4 p-2 sm:p-6 min-h-0">
+      {/* Main content — mobile: pitch and wheel/picker side by side (compact).
+          Desktop (lg+): original two-column layout with full spacing. */}
+      <div className="flex-1 grid grid-cols-[1fr_1fr] lg:grid-cols-[minmax(360px,1fr)_minmax(0,1.2fr)] gap-2 lg:gap-4 p-2 lg:p-6 min-h-0">
         {/* Left: Pitch + strength bars + bench */}
-        <div className="flex flex-col gap-1 sm:gap-3 min-h-0">
+        <div className="flex flex-col gap-1 lg:gap-3 min-h-0">
           {/* Strength bars — hidden on mobile to save space */}
-          {diffCfg.showTeamScore && <div className="hidden sm:block"><StrengthBars strength={strength} t={t} /></div>}
+          {diffCfg.showTeamScore && <div className="hidden lg:block"><StrengthBars strength={strength} t={t} /></div>}
           {diffCfg.showChemistry && filled > 0 && (
-            <div className="hidden sm:flex items-center gap-3 px-2">
+            <div className="hidden lg:flex items-center gap-3 px-2">
               <div className="flex items-center gap-1.5">
                 <div className="w-3 h-0.5 bg-green-500 rounded" />
                 <span className="text-[10px] text-ink-400 font-mono">
@@ -433,7 +433,7 @@ function DraftView() {
 
           {/* Pitch — takes available space */}
           <div className="flex-1 flex items-center justify-center min-h-0">
-            <div className="w-full">
+            <div className="w-full max-w-[420px] lg:max-w-[480px]">
               <Pitch
                 formationId={formationId}
                 slots={slots}
@@ -451,7 +451,7 @@ function DraftView() {
           </div>
 
           {/* Hint text — hidden on mobile (shown in right panel instead) */}
-          <p className="hidden sm:block text-sm text-ink-500 text-center">
+          <p className="hidden lg:block text-sm text-ink-500 text-center">
             {pendingPlayer
               ? lang === 'zh'
                 ? diffCfg.showPosition
@@ -469,7 +469,7 @@ function DraftView() {
 
           {/* Bench — hidden on mobile (shown in right panel instead) */}
           {bench.length > 0 && (
-            <div className="hidden sm:block">
+            <div className="hidden lg:block">
               <Bench
                 bench={bench}
                 showRatings={diffCfg.showRatings}
@@ -484,9 +484,9 @@ function DraftView() {
         </div>
 
         {/* Right: wheel, squad picker, or simulate button */}
-        <div className="rounded-2xl border border-ink-800 bg-ink-900/40 p-2 sm:p-5 flex flex-col min-h-0 overflow-y-auto">
+        <div className="rounded-2xl border border-ink-800 bg-ink-900/40 p-2 lg:p-5 flex flex-col min-h-0 overflow-y-auto">
           {/* Mobile-only: hint text + bench */}
-          <div className="sm:hidden">
+          <div className="lg:hidden">
             <p className="text-xs text-ink-500 text-center mb-1">
               {pendingPlayer
                 ? lang === 'zh'
