@@ -1,7 +1,7 @@
 import { motion } from 'framer-motion';
 import type { SimResult, SquadSlot } from '../types';
 import { useLang } from '../i18n/useLang';
-import { outcomeOf, teamStrength, positionGroup } from '../engine/simulation';
+import { outcomeOf, teamStrength, positionGroup, calculateChemistry } from '../engine/simulation';
 import { getCompetition } from '../data';
 import Pitch from './Pitch';
 
@@ -27,6 +27,7 @@ export default function ResultsView({
   const { lang, t } = useLang();
   const comp = getCompetition(competitionId);
   const strength = teamStrength(slots);
+  const chemistry = calculateChemistry(slots);
 
   const champ = result.position === 1;
   const zh = lang === 'zh';
@@ -91,6 +92,8 @@ export default function ResultsView({
                   formationId={formationId}
                   slots={slots}
                   showRatings={true}
+                  showChemistry={true}
+                  chemistryLinks={chemistry.links}
                   compact={true}
                 />
               </div>
@@ -189,7 +192,7 @@ export default function ResultsView({
                 const p = slot.player!;
                 const group = positionGroup(slot.position);
                 const groupColor = group === 'GK' ? 'text-yellow-400' : group === 'DEF' ? 'text-blue-400' : group === 'MID' ? 'text-green-400' : 'text-red-400';
-                const fitLabel = slot.positionFit === 'primary' ? '' : slot.positionFit === 'secondary' ? ' (-5)' : ' (-15)';
+                const fitLabel = slot.positionPenalty > 0 ? ` (-${slot.positionPenalty})` : '';
                 return (
                   <div key={slot.slotId} className="flex items-center gap-3 px-4 py-2.5">
                     {/* Position code */}

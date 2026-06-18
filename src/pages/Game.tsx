@@ -404,15 +404,15 @@ function DraftView() {
         )}
       </AnimatePresence>
 
-      {/* Main content — full height grid. On mobile, single column with pitch
-          on top and wheel/picker below. On lg+, two columns side by side. */}
-      <div className="flex-1 grid grid-cols-1 lg:grid-cols-[minmax(360px,1fr)_minmax(0,1.2fr)] gap-4 p-4 sm:p-6 min-h-0">
+      {/* Main content — on mobile: pitch and wheel/picker side by side.
+          On lg+: two columns with more spacing. */}
+      <div className="flex-1 grid grid-cols-[1fr_1fr] lg:grid-cols-[minmax(360px,1fr)_minmax(0,1.2fr)] gap-2 sm:gap-4 p-2 sm:p-6 min-h-0">
         {/* Left: Pitch + strength bars + bench */}
-        <div className="flex flex-col gap-3 min-h-0">
-          {/* Strength bars + chemistry — hidden in divine/hard difficulty */}
-          {diffCfg.showTeamScore && <StrengthBars strength={strength} t={t} />}
+        <div className="flex flex-col gap-1 sm:gap-3 min-h-0">
+          {/* Strength bars — hidden on mobile to save space */}
+          {diffCfg.showTeamScore && <div className="hidden sm:block"><StrengthBars strength={strength} t={t} /></div>}
           {diffCfg.showChemistry && filled > 0 && (
-            <div className="flex items-center gap-3 px-2">
+            <div className="hidden sm:flex items-center gap-3 px-2">
               <div className="flex items-center gap-1.5">
                 <div className="w-3 h-0.5 bg-green-500 rounded" />
                 <span className="text-[10px] text-ink-400 font-mono">
@@ -431,9 +431,9 @@ function DraftView() {
             </div>
           )}
 
-          {/* Pitch — takes available space, but on mobile limit height */}
+          {/* Pitch — takes available space */}
           <div className="flex-1 flex items-center justify-center min-h-0">
-            <div className="w-full max-w-[420px] sm:max-w-[480px]">
+            <div className="w-full">
               <Pitch
                 formationId={formationId}
                 slots={slots}
@@ -450,7 +450,8 @@ function DraftView() {
             </div>
           </div>
 
-          <p className="text-sm text-ink-500 text-center">
+          {/* Hint text — hidden on mobile (shown in right panel instead) */}
+          <p className="hidden sm:block text-sm text-ink-500 text-center">
             {pendingPlayer
               ? lang === 'zh'
                 ? diffCfg.showPosition
@@ -466,22 +467,47 @@ function DraftView() {
                   : 'Spin → pick → place anywhere. Tap a placed player to select and move.'}
           </p>
 
-          {/* Bench */}
+          {/* Bench — hidden on mobile (shown in right panel instead) */}
           {bench.length > 0 && (
-            <Bench
-              bench={bench}
-              showRatings={diffCfg.showRatings}
-              showPosition={diffCfg.showPosition}
-              onPlace={(player, slotId) => game.placeBenchPlayer(player, slotId)}
-              slots={slots}
-              lang={lang}
-              t={t}
-            />
+            <div className="hidden sm:block">
+              <Bench
+                bench={bench}
+                showRatings={diffCfg.showRatings}
+                showPosition={diffCfg.showPosition}
+                onPlace={(player, slotId) => game.placeBenchPlayer(player, slotId)}
+                slots={slots}
+                lang={lang}
+                t={t}
+              />
+            </div>
           )}
         </div>
 
         {/* Right: wheel, squad picker, or simulate button */}
-        <div className="rounded-2xl border border-ink-800 bg-ink-900/40 p-4 sm:p-5 flex flex-col min-h-0">
+        <div className="rounded-2xl border border-ink-800 bg-ink-900/40 p-2 sm:p-5 flex flex-col min-h-0 overflow-y-auto">
+          {/* Mobile-only: hint text + bench */}
+          <div className="sm:hidden">
+            <p className="text-xs text-ink-500 text-center mb-1">
+              {pendingPlayer
+                ? lang === 'zh'
+                  ? `点击球场上的位置放置 ${pendingPlayer.nameZh}`
+                  : `Tap a pitch slot to place ${pendingPlayer.name}`
+                : selectedSlotId
+                  ? lang === 'zh' ? '点击其他位置移动' : 'Tap another slot to move'
+                  : lang === 'zh' ? '转盘→选人→放位置' : 'Spin → pick → place'}
+            </p>
+            {bench.length > 0 && (
+              <Bench
+                bench={bench}
+                showRatings={diffCfg.showRatings}
+                showPosition={diffCfg.showPosition}
+                onPlace={(player, slotId) => game.placeBenchPlayer(player, slotId)}
+                slots={slots}
+                lang={lang}
+                t={t}
+              />
+            )}
+          </div>
           {complete ? (
             <motion.div
               key="simulate"
@@ -528,24 +554,24 @@ function DraftView() {
                 exit={{ opacity: 0 }}
                 className="flex flex-col items-center justify-center flex-1"
               >
-                <h2 className="font-display font-bold text-lg text-ink-100 mb-3">
+                <h2 className="font-display font-bold text-sm sm:text-lg text-ink-100 mb-1 sm:mb-3">
                   {lang === 'zh' ? '放置球员' : 'Place Player'}
                 </h2>
-                <div className="inline-flex flex-col items-center gap-2 p-5 rounded-xl border border-accent/40 bg-accent/5">
+                <div className="inline-flex flex-col items-center gap-1 sm:gap-2 p-2 sm:p-5 rounded-xl border border-accent/40 bg-accent/5">
                   {diffCfg.showRatings && (
-                    <div className="text-4xl font-display font-black text-accent">
+                    <div className="text-2xl sm:text-4xl font-display font-black text-accent">
                       {pendingPlayer.rating}
                     </div>
                   )}
-                  <div className="font-bold text-ink-100 text-lg">
+                  <div className="font-bold text-ink-100 text-sm sm:text-lg">
                     {lang === 'zh' ? pendingPlayer.nameZh : pendingPlayer.name}
                   </div>
-                  <div className="text-xs text-ink-400 font-mono">
+                  <div className="text-[10px] sm:text-xs text-ink-400 font-mono">
                     {pendingPlayer.position}
                     {diffCfg.showNationality && ` · ${lang === 'zh' ? pendingPlayer.nationalityZh : pendingPlayer.nationality}`}
                   </div>
                   {diffCfg.showRatings && (
-                    <div className="grid grid-cols-6 gap-2 mt-2">
+                    <div className="grid grid-cols-6 gap-1 sm:gap-2 mt-1 sm:mt-2">
                       {([
                         ['PAC', pendingPlayer.attr.pace],
                         ['SHO', pendingPlayer.attr.shooting],
@@ -555,21 +581,21 @@ function DraftView() {
                         ['PHY', pendingPlayer.attr.physical],
                       ] as const).map(([key, val]) => (
                         <div key={key} className="text-center">
-                          <div className="text-[8px] text-ink-400 font-mono">{key}</div>
-                          <div className="text-xs font-mono font-bold text-ink-100">{val}</div>
+                          <div className="text-[7px] sm:text-[8px] text-ink-400 font-mono">{key}</div>
+                          <div className="text-[10px] sm:text-xs font-mono font-bold text-ink-100">{val}</div>
                         </div>
                       ))}
                     </div>
                   )}
                 </div>
-                <p className="text-xs text-ink-400 mt-4 text-center max-w-xs">
+                <p className="text-[10px] sm:text-xs text-ink-400 mt-2 sm:mt-4 text-center max-w-xs">
                   {lang === 'zh'
-                    ? '在球场上点击高亮的位置来放置。'
-                    : 'Click a highlighted slot on the pitch to place.'}
+                    ? '点击球场上的位置来放置'
+                    : 'Tap a slot on the pitch to place'}
                 </p>
                 <button
                   onClick={() => game.cancelPlacement()}
-                  className="mt-4 px-6 py-2 rounded-full border border-ink-700 text-ink-300 text-sm font-medium hover:border-ink-500 hover:text-ink-100 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+                  className="mt-2 sm:mt-4 px-4 sm:px-6 py-1.5 sm:py-2 rounded-full border border-ink-700 text-ink-300 text-xs sm:text-sm font-medium hover:border-ink-500 hover:text-ink-100 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
                 >
                   {lang === 'zh' ? '取消' : 'Cancel'}
                 </button>
@@ -582,9 +608,9 @@ function DraftView() {
                 exit={{ opacity: 0 }}
                 className="flex flex-col flex-1"
               >
-                <div className="mb-3">
-                  <h2 className="font-display font-bold text-lg text-ink-100">{t('spin')}</h2>
-                  <p className="text-xs text-ink-400">
+                <div className="mb-1 sm:mb-3">
+                  <h2 className="font-display font-bold text-sm sm:text-lg text-ink-100">{t('spin')}</h2>
+                  <p className="text-[10px] sm:text-xs text-ink-400">
                     {lang === 'zh'
                       ? '转动转盘，随机获得一支球队和一个赛季。'
                       : 'Spin to land on a random club and season.'}
