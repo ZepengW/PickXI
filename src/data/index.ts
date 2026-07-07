@@ -9,7 +9,6 @@ import { WC_PLAYERS } from './players/worldcup';
 import { SERIEA_PLAYERS } from './players/seriea';
 import { BUNDESLIGA_PLAYERS } from './players/bundesliga';
 import { FIFA_IMPORTED_PLAYERS } from './players/fifa-imported';
-import { FM_EXTRA_PLAYERS } from './players/fm_extra';
 
 export const ALL_PLAYERS: Player[] = [
   ...EPL_PLAYERS,
@@ -20,7 +19,6 @@ export const ALL_PLAYERS: Player[] = [
   ...SERIEA_PLAYERS,
   ...BUNDESLIGA_PLAYERS,
   ...FIFA_IMPORTED_PLAYERS,
-  ...FM_EXTRA_PLAYERS,
 ];
 
 export { COMPETITIONS, COMPETITION_MAP, CLUBS, CLUB_MAP, clubsForCompetition, getSeasonClubIds, FORMATIONS, getFormation };
@@ -103,15 +101,16 @@ function buildDynamicClub(clubId: string, competitionId: string, players: Player
   };
 }
 
-/** Estimate a club's strength (0-100) from its players' average rating. */
+/** Estimate a club's strength (FM 1-20 scale) from its players' average rating. */
 function estimateClubStrength(players: Player[]): number {
-  if (players.length === 0) return 65;
+  if (players.length === 0) return 10;
   const topPlayers = players
     .map((p) => p.rating)
     .sort((a, b) => b - a)
     .slice(0, 11);
   const avg = topPlayers.reduce((sum, r) => sum + r, 0) / topPlayers.length;
-  return Math.round(Math.max(50, Math.min(92, avg)));
+  // FM 1-20 scale: top clubs ~15-17, mid ~12-14, weak ~8-11
+  return Math.round(Math.max(5, Math.min(18, avg)));
 }
 
 /** Get all clubs that participated in a specific competition+season.

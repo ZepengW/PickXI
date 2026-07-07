@@ -37,7 +37,7 @@ export interface Player {
   clubId: string;
   season: string; // e.g. "2019-20"
   competitionId: string;
-  rating: number; // overall 40-99
+  rating: number; // overall 1-20 (FM scale)
   attr: Attributes;
   nationality: string;
   nationalityZh: string;
