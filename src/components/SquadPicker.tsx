@@ -4,6 +4,7 @@ import type { Player } from '../types';
 import { getClub } from '../data';
 import { useLang } from '../i18n/useLang';
 import PlayerCard from './PlayerCard';
+import ClubBadge from './ClubBadge';
 
 interface SquadPickerProps {
   players: Player[];
@@ -39,12 +40,7 @@ export default function SquadPicker({
   return (
     <div>
       <div className="flex items-center gap-3 mb-4">
-        <div
-          className="w-10 h-10 rounded-full flex items-center justify-center font-display font-black text-xs text-white"
-          style={{ background: club?.color ?? '#333' }}
-        >
-          {club ? (lang === 'zh' ? club.shortNameZh.slice(0, 2) : club.shortName.slice(0, 3)) : ''}
-        </div>
+        <ClubBadge club={club} size={40} />
         <div>
           <div className="font-display font-bold text-lg text-ink-100">
             {club ? (lang === 'zh' ? club.nameZh : club.name) : ''}

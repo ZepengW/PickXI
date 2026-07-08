@@ -149,6 +149,15 @@ export const STRINGS = {
   away: { zh: '客', en: 'A' },
   vs: { zh: 'vs', en: 'vs' },
 
+  // Animated sim
+  simProgressTitle: { zh: '赛季进行中', en: 'Season in progress' },
+  simRound: { zh: '第', en: 'R' },
+  simOf: { zh: '轮 / 共', en: 'of' },
+  simRounds: { zh: '轮', en: 'rounds' },
+  simSkip: { zh: '跳过', en: 'Skip' },
+  simViewResults: { zh: '查看完整战报', en: 'View full report' },
+  simFinished: { zh: '赛季结束！', en: 'Season complete!' },
+
   // Misc
   back: { zh: '返回', en: 'Back' },
   next: { zh: '下一步', en: 'Next' },

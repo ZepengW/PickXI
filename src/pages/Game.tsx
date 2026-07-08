@@ -5,6 +5,8 @@ import Pitch from '../components/Pitch';
 import Wheel from '../components/Wheel';
 import SquadPicker from '../components/SquadPicker';
 import ResultsView from '../components/ResultsView';
+import SimProgressView from '../components/SimProgressView';
+import ClubBadge from '../components/ClubBadge';
 import { useLang } from '../i18n/useLang';
 import { useGame, filledCount, isComplete } from '../store/game';
 import {
@@ -30,6 +32,9 @@ export default function Game() {
         <AnimatePresence mode="wait">
           {phase === 'setup' && <SetupView key="setup" />}
           {phase === 'draft' && <DraftView key="draft" />}
+          {phase === 'sim' && game.result && (
+            <SimProgressView key="sim" result={game.result} />
+          )}
           {phase === 'results' && game.result && (
             <ResultsView
               key="results"
@@ -291,7 +296,7 @@ function DraftView() {
     if (!complete) return;
     setSimulating(true);
     setTimeout(() => {
-      game.runSim();
+      game.runSimAnimated();
       setSimulating(false);
     }, 600);
   }
@@ -352,6 +357,7 @@ function DraftView() {
           >
             {formationId.toUpperCase()} ▾
           </button>
+          {spin && <ClubBadge clubId={spin.clubId} size={28} className="flex-shrink-0" />}
         </div>
         <div className="flex items-center gap-2">
           {/* Restart button in draft */}

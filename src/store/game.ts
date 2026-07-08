@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import type { Difficulty, Lang, Player, SimResult, SquadSlot } from '../types';
+import type { Difficulty, Lang, MatchResult, Player, SimResult, SquadSlot } from '../types';
 import { DIFFICULTY_CONFIGS } from '../types';
 import { getFormation, availableSeasons, getCompetition } from '../data';
 import { simulateSeason, positionFit, positionPenalty } from '../engine/simulation';
@@ -37,6 +37,14 @@ interface GameState {
   pendingPlayer: Player | null;
   result: SimResult | null;
 
+  // animated sim state
+  /** Number of rounds revealed so far (0 = not started). */
+  simProgress: number;
+  /** Matches revealed so far during the animated sim. */
+  simMatches: MatchResult[];
+  /** Whether the round-by-round animation is currently playing. */
+  isSimAnimating: boolean;
+
   // actions
   setLang: (lang: Lang) => void;
   setTheme: (theme: 'light' | 'dark') => void;
@@ -62,6 +70,12 @@ interface GameState {
   movePlayer: (fromSlotId: string, toSlotId: string) => void;
 
   runSim: () => void;
+  /** Run the full sim but reveal results round-by-round via animation. */
+  runSimAnimated: () => void;
+  /** Advance the animated sim by one round. */
+  advanceSimRound: () => void;
+  /** Skip the rest of the animation and jump to the final results view. */
+  skipSimAnimation: () => void;
   reset: () => void;
   restartAll: () => void;
   backToSetup: () => void;
@@ -160,6 +174,9 @@ export const useGame = create<GameState>()(
       spinning: false,
       pendingPlayer: null,
       result: null,
+      simProgress: 0,
+      simMatches: [],
+      isSimAnimating: false,
 
       setLang: (lang) => set({ lang }),
       setTheme: (theme) => set({ theme }),
@@ -214,6 +231,9 @@ export const useGame = create<GameState>()(
           spin: null,
           pendingPlayer: null,
           result: null,
+          simProgress: 0,
+          simMatches: [],
+          isSimAnimating: false,
         }),
 
       doSpin: (clubId, season) =>
@@ -339,6 +359,49 @@ export const useGame = create<GameState>()(
         set({ phase: 'results', result });
       },
 
+      runSimAnimated: () => {
+        const { competitionId, slots, opponentSeason } = get();
+        const result = simulateSeason(competitionId, slots, opponentSeason || undefined, get().teamName || undefined);
+        const first = result.matches.slice(0, 1);
+        set({
+          phase: 'sim',
+          result,
+          simProgress: 1,
+          simMatches: first,
+          isSimAnimating: true,
+        });
+      },
+
+      advanceSimRound: () => {
+        const { result, simProgress, isSimAnimating } = get();
+        if (!result || !isSimAnimating) return;
+        const next = simProgress + 1;
+        if (next >= result.matches.length) {
+          // Reveal the final round but keep animating so the view can
+          // show a brief "season complete" pause before transitioning.
+          set({
+            simProgress: result.matches.length,
+            simMatches: result.matches,
+          });
+          return;
+        }
+        set({
+          simProgress: next,
+          simMatches: result.matches.slice(0, next),
+        });
+      },
+
+      skipSimAnimation: () => {
+        const { result } = get();
+        if (!result) return;
+        set({
+          phase: 'results',
+          simProgress: result.matches.length,
+          simMatches: result.matches,
+          isSimAnimating: false,
+        });
+      },
+
       reset: () =>
         set({
           phase: 'setup',
@@ -349,6 +412,9 @@ export const useGame = create<GameState>()(
           spinning: false,
           pendingPlayer: null,
           result: null,
+          simProgress: 0,
+          simMatches: [],
+          isSimAnimating: false,
         }),
 
       restartAll: () => {
@@ -370,10 +436,20 @@ export const useGame = create<GameState>()(
           spinning: false,
           pendingPlayer: null,
           result: null,
+          simProgress: 0,
+          simMatches: [],
+          isSimAnimating: false,
         });
       },
 
-      backToSetup: () => set({ phase: 'setup', result: null }),
+      backToSetup: () =>
+        set({
+          phase: 'setup',
+          result: null,
+          simProgress: 0,
+          simMatches: [],
+          isSimAnimating: false,
+        }),
     }),
     {
       name: 'pick-xi-store',

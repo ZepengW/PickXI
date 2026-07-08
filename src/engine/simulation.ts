@@ -33,6 +33,48 @@ const POSITION_WEIGHT: Partial<Record<Position, number>> = {
   CF: 1.0,
 };
 
+/**
+ * Per-position attribute weights (each sums to 1.0). Used to compute a
+ * position-weighted attribute average instead of a flat 6-attribute mean,
+ * so a striker is judged on shooting/pace rather than defending, etc.
+ */
+type AttrWeights = {
+  pace: number;
+  shooting: number;
+  passing: number;
+  dribbling: number;
+  defending: number;
+  physical: number;
+};
+
+const POSITION_ATTR_WEIGHT: Partial<Record<Position, AttrWeights>> = {
+  GK: { defending: 0.35, physical: 0.2, pace: 0.1, passing: 0.15, dribbling: 0.1, shooting: 0.1 },
+  CB: { defending: 0.35, physical: 0.25, pace: 0.15, passing: 0.15, dribbling: 0.05, shooting: 0.05 },
+  LB: { defending: 0.25, pace: 0.25, physical: 0.15, passing: 0.15, dribbling: 0.1, shooting: 0.1 },
+  RB: { defending: 0.25, pace: 0.25, physical: 0.15, passing: 0.15, dribbling: 0.1, shooting: 0.1 },
+  LWB: { defending: 0.2, pace: 0.3, physical: 0.1, passing: 0.2, dribbling: 0.15, shooting: 0.05 },
+  RWB: { defending: 0.2, pace: 0.3, physical: 0.1, passing: 0.2, dribbling: 0.15, shooting: 0.05 },
+  CDM: { defending: 0.3, passing: 0.25, physical: 0.2, dribbling: 0.1, pace: 0.1, shooting: 0.05 },
+  CM: { passing: 0.3, dribbling: 0.2, defending: 0.2, physical: 0.1, pace: 0.1, shooting: 0.1 },
+  CAM: { passing: 0.25, dribbling: 0.25, shooting: 0.2, pace: 0.15, defending: 0.05, physical: 0.1 },
+  LM: { pace: 0.25, dribbling: 0.2, passing: 0.25, shooting: 0.1, defending: 0.1, physical: 0.1 },
+  RM: { pace: 0.25, dribbling: 0.2, passing: 0.25, shooting: 0.1, defending: 0.1, physical: 0.1 },
+  LW: { pace: 0.3, dribbling: 0.25, shooting: 0.2, passing: 0.15, defending: 0.05, physical: 0.05 },
+  RW: { pace: 0.3, dribbling: 0.25, shooting: 0.2, passing: 0.15, defending: 0.05, physical: 0.05 },
+  CF: { shooting: 0.35, pace: 0.25, dribbling: 0.2, physical: 0.1, passing: 0.05, defending: 0.05 },
+  ST: { shooting: 0.35, pace: 0.25, dribbling: 0.2, physical: 0.1, passing: 0.05, defending: 0.05 },
+};
+
+// Fallback: equal weights (equivalent to a flat 6-attribute average).
+const DEFAULT_ATTR_WEIGHT: AttrWeights = {
+  pace: 1 / 6,
+  shooting: 1 / 6,
+  passing: 1 / 6,
+  dribbling: 1 / 6,
+  defending: 1 / 6,
+  physical: 1 / 6,
+};
+
 export type PositionGroup = 'GK' | 'DEF' | 'MID' | 'ATT';
 
 export function positionGroup(pos: Position): PositionGroup {
@@ -285,7 +327,7 @@ export function teamStrength(slots: SquadSlot[]): {
     const penalty = positionPenalty(pl, slot.position);
     const chemBonus = chemBonusPerSlot[slot.slotId] ?? 0;
     const effectiveRating = Math.max(5, pl.rating - penalty + chemBonus);
-    const attrAvg = avgAttr(pl.attr);
+    const attrAvg = weightedAttr(pl.attr, slot.position);
     const score = effectiveRating * 0.6 + attrAvg * 0.4;
     totalWeight += w;
     totalScore += score * w;
@@ -315,8 +357,28 @@ export function teamStrength(slots: SquadSlot[]): {
   };
 }
 
-function avgAttr(a: Attributes): number {
-  return (a.pace + a.shooting + a.passing + a.dribbling + a.defending + a.physical) / 6;
+/** Position-weighted attribute average. Falls back to the flat mean if the
+ *  position has no explicit weight map. */
+function weightedAttr(a: Attributes, pos: Position): number {
+  const w = POSITION_ATTR_WEIGHT[pos] ?? DEFAULT_ATTR_WEIGHT;
+  return (
+    a.pace * w.pace +
+    a.shooting * w.shooting +
+    a.passing * w.passing +
+    a.dribbling * w.dribbling +
+    a.defending * w.defending +
+    a.physical * w.physical
+  );
+}
+
+/** Resolve a club's attack rating, falling back to overall strength. */
+function clubAttack(c: Club): number {
+  return c.attack ?? c.strength;
+}
+
+/** Resolve a club's defence rating, falling back to overall strength. */
+function clubDefence(c: Club): number {
+  return c.defence ?? c.strength;
 }
 
 function clamp(v: number, lo: number, hi: number): number {
@@ -341,15 +403,18 @@ function gaussian(): number {
 export function simulateMatch(
   myAttack: number,
   myDefence: number,
-  oppStrength: number,
+  oppAttack: number,
+  oppDefence: number,
   home: boolean,
 ): { goalsFor: number; goalsAgainst: number } {
-  const homeBoost = home ? 1 : 0;
-  const attackDelta = myAttack - oppStrength + homeBoost;
-  const defenceDelta = myDefence - oppStrength;
+  const homeBoost = home ? 0.5 : 0;
+  // My attack vs opponent's defence
+  const attackDelta = myAttack - oppDefence + homeBoost;
+  // Opponent's attack vs my defence
+  const defenceDelta = oppAttack - myDefence - homeBoost * 0.5;
 
-  const xgFor = clamp(1.35 + attackDelta * 0.35 + gaussian() * 0.28, 0.15, 5.5);
-  const xgAgainst = clamp(1.25 - defenceDelta * 0.3 + gaussian() * 0.28, 0.1, 5.5);
+  const xgFor = clamp(1.2 + attackDelta * 0.32 + gaussian() * 0.25, 0.1, 5.0);
+  const xgAgainst = clamp(1.15 + defenceDelta * 0.28 + gaussian() * 0.25, 0.1, 5.0);
 
   return {
     goalsFor: poisson(xgFor),
@@ -453,6 +518,13 @@ export function simulateSeason(
     );
   }
 
+  // Cap opponent pool so the final table (opponents + user's XI) matches
+  // teamCount. Without this, historical static clubs inflate the league table
+  // (e.g. EPL would show 34 teams instead of 20).
+  if (!isCupComp && oppClubs.length >= teamCount) {
+    oppClubs = oppClubs.slice(0, teamCount - 1);
+  }
+
   const opponentPool = oppClubs;
 
   const matches: MatchResult[] = [];
@@ -482,16 +554,20 @@ export function simulateSeason(
     const opp = opponents[i % opponents.length];
     const home = i % 2 === 0;
 
-    let oppStrength = opp.strength;
+    let oppAttack = clubAttack(opp);
+    let oppDefence = clubDefence(opp);
     if (isCup) {
       const progress = i / Math.max(1, matchCount - 1);
-      oppStrength = clamp(opp.strength * (0.82 + progress * 0.3), 8, 20);
+      const factor = 0.82 + progress * 0.3;
+      oppAttack = clamp(oppAttack * factor, 8, 20);
+      oppDefence = clamp(oppDefence * factor, 8, 20);
     }
 
     const { goalsFor: gf, goalsAgainst: ga } = simulateMatch(
       attack,
       defence,
-      oppStrength,
+      oppAttack,
+      oppDefence,
       home,
     );
 
@@ -562,15 +638,13 @@ export function simulateSeason(
       // Simulate two matches (home & away) between these two clubs.
       for (let leg = 0; leg < 2; leg++) {
         const isHome = leg === 0;
-        const homeBoost = isHome ? 1 : 0;
-        const strengthDelta = opp.strength - other.strength + homeBoost;
-
-        // Expected goals based on strength difference
-        const xgFor = clamp(1.35 + strengthDelta * 0.2 + gaussian() * 0.45, 0.2, 4.5);
-        const xgAgainst = clamp(1.25 - strengthDelta * 0.17 + gaussian() * 0.45, 0.2, 4.5);
-
-        const gf = poisson(xgFor);
-        const ga = poisson(xgAgainst);
+        const { goalsFor: gf, goalsAgainst: ga } = simulateMatch(
+          clubAttack(opp),
+          clubDefence(opp),
+          clubAttack(other),
+          clubDefence(other),
+          isHome,
+        );
         oppGF += gf;
         oppGA += ga;
         if (gf > ga) oppWins += 1;

@@ -8,6 +8,11 @@ import { UCL_PLAYERS } from './players/ucl';
 import { WC_PLAYERS } from './players/worldcup';
 import { SERIEA_PLAYERS } from './players/seriea';
 import { BUNDESLIGA_PLAYERS } from './players/bundesliga';
+import { EREDIVISIE_PLAYERS } from './players/eredivisie';
+import { PRIMEIRA_PLAYERS } from './players/primeira';
+import { SPL_PLAYERS } from './players/spl';
+import { SUPERLIG_PLAYERS } from './players/superlig';
+import { GSL_PLAYERS } from './players/gsl';
 import { FIFA_IMPORTED_PLAYERS } from './players/fifa-imported';
 
 export const ALL_PLAYERS: Player[] = [
@@ -18,6 +23,11 @@ export const ALL_PLAYERS: Player[] = [
   ...WC_PLAYERS,
   ...SERIEA_PLAYERS,
   ...BUNDESLIGA_PLAYERS,
+  ...EREDIVISIE_PLAYERS,
+  ...PRIMEIRA_PLAYERS,
+  ...SPL_PLAYERS,
+  ...SUPERLIG_PLAYERS,
+  ...GSL_PLAYERS,
   ...FIFA_IMPORTED_PLAYERS,
 ];
 

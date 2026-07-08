@@ -55,6 +55,10 @@ export interface Club {
   competitionId: string;
   /** Base strength used when this club is a sim opponent (0-100). */
   strength: number;
+  /** Optional attack rating; falls back to strength when absent. */
+  attack?: number;
+  /** Optional defence rating; falls back to strength when absent. */
+  defence?: number;
 }
 
 export type CompetitionType = 'league' | 'cup';

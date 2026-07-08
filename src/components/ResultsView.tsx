@@ -4,6 +4,7 @@ import { useLang } from '../i18n/useLang';
 import { outcomeOf, teamStrength, positionGroup, calculateChemistry } from '../engine/simulation';
 import { getCompetition } from '../data';
 import Pitch from './Pitch';
+import ClubBadge from './ClubBadge';
 
 interface ResultsViewProps {
   result: SimResult;
@@ -334,6 +335,7 @@ export default function ResultsView({
                     <span className={`w-7 text-center font-bold rounded px-1 border ${outcomeColor}`}>
                       {outcome}
                     </span>
+                    <ClubBadge clubId={m.opponentId} size={16} className="flex-shrink-0" />
                     <span className="flex-1 truncate text-ink-100">
                       {m.home
                         ? zh

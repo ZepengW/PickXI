@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import type { ClubSeason } from '../data';
 import { getClub } from '../data';
 import { useLang } from '../i18n/useLang';
+import ClubBadge from './ClubBadge';
 
 interface WheelProps {
   options: ClubSeason[];
@@ -127,12 +128,7 @@ export default function Wheel({ options, onLanded, disabled }: WheelProps) {
                   background: `linear-gradient(160deg, ${club.color}22, var(--color-ink-800) 70%)`,
                 }}
               >
-                <div
-                  className="w-8 h-8 rounded-full mb-2 flex items-center justify-center font-display font-black text-xs text-white"
-                  style={{ background: club.color }}
-                >
-                  {lang === 'zh' ? club.shortNameZh.slice(0, 2) : club.shortName.slice(0, 3)}
-                </div>
+                <ClubBadge club={club} size={32} className="mb-2" />
                 <div className="text-xs font-semibold text-ink-100 leading-tight">
                   {lang === 'zh' ? club.nameZh : club.name}
                 </div>
